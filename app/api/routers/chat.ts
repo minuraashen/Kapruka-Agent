@@ -8,19 +8,35 @@ import OpenAI from "openai";
 import { env } from "../lib/env";
 
 function getLlmClient() {
-  if (!env.llmApiKey && !env.llmBaseUrl) {
+  if (!env.llmApiKey || !env.llmModel) {
     throw new Error(
-      "Missing LLM configuration. Set LLM_API_KEY and LLM_MODEL for an OpenAI-compatible provider, or use OPENAI_API_KEY as a fallback."
+      "Missing LLM configuration. Set LLM_API_KEY and LLM_MODEL for OpenRouter."
     );
   }
 
   return new OpenAI({
-    apiKey: env.llmApiKey || "not-needed",
-    baseURL: env.llmBaseUrl || undefined,
+    apiKey: env.llmApiKey,
+    baseURL: env.llmBaseUrl,
+    maxRetries: 1,
+    timeout: 20000,
   });
 }
 
-// Function definitions for OpenAI function calling
+function getLlmErrorMessage(error: unknown) {
+  const status = error && typeof error === "object" ? (error as { status?: number }).status : undefined;
+
+  if (status === 429) {
+    return "OpenRouter is rate-limiting the selected free model right now. Please wait a bit and try again, or switch `LLM_MODEL` to another free OpenRouter model.";
+  }
+
+  if (status === 401) {
+    return "OpenRouter rejected the configured API key. Please check `LLM_API_KEY`, `LLM_BASE_URL`, and `LLM_MODEL` in `.env`.";
+  }
+
+  return "OpenRouter is unavailable right now. Please check the server logs and LLM settings in `.env`.";
+}
+
+// Tool definitions for OpenAI-compatible function calling.
 const TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
   {
     type: "function",
@@ -205,7 +221,7 @@ export const chatRouter = createRouter({
     )
     .mutation(async ({ input }) => {
       const db = getDb();
-      const openai = getLlmClient();
+      const openrouter = getLlmClient();
 
       // Ensure session exists
       const existingSession = await db
@@ -243,7 +259,7 @@ export const chatRouter = createRouter({
         })),
       ];
 
-      // Call OpenAI with function calling
+      // Call OpenRouter with OpenAI-compatible function calling.
       let assistantContent = "";
       let functionCalls: Array<{
         name: string;
@@ -253,13 +269,22 @@ export const chatRouter = createRouter({
 
       // Up to 5 iterations of tool calling
       for (let i = 0; i < 5; i++) {
-        const response = await openai.chat.completions.create({
-          model: env.llmModel,
-          messages: messagesForAI,
-          tools: TOOLS,
-          tool_choice: "auto",
-          temperature: 0.8,
-        });
+        let response: OpenAI.Chat.ChatCompletion;
+
+        try {
+          response = await openrouter.chat.completions.create({
+            model: env.llmModel,
+            messages: messagesForAI,
+            tools: TOOLS,
+            tool_choice: "auto",
+            temperature: 0.8,
+          });
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          console.error("[LLM] Chat completion failed:", errorMsg);
+          assistantContent = getLlmErrorMessage(error);
+          break;
+        }
 
         const message = response.choices[0].message;
 
