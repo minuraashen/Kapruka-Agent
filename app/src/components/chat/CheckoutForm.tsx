@@ -1,15 +1,38 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { CreditCard, Gift, Calendar, MapPin, User, Mail, Phone, Truck, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  CreditCard,
+  Gift,
+  Calendar,
+  MapPin,
+  User,
+  Mail,
+  Phone,
+  Truck,
+  Check,
+  Sparkles,
+} from "lucide-react";
 import { useChatStore } from "@/store/chatStore";
 import { trpc } from "@/providers/trpc";
 
+const GIFT_TEMPLATES = [
+  "Happy Birthday! 🎂 Wishing you a wonderful year ahead.",
+  "With love and warm wishes ❤️",
+  "සුභ උපන් දිනයක්! 🎉",
+  "ආදරෙන්, ඔබට සුභ පැතුම්! 🌸",
+  "Just thinking of you 💐",
+  "Subha upadinayak! Enjoy your day machan 🥳",
+];
+
+const GIFT_MESSAGE_MAX = 300;
+
 export default function CheckoutForm() {
-  const cart = useChatStore((s) => s.cart);
-  const setState = useChatStore((s) => s.setState);
-  const setCart = useChatStore((s) => s.setCart);
+  const cart = useChatStore(s => s.cart);
+  const setState = useChatStore(s => s.setState);
+  const setCart = useChatStore(s => s.setCart);
 
   const [step, setStep] = useState(0);
+  const [isGift, setIsGift] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderResult, setOrderResult] = useState<{
     payUrl?: string;
@@ -35,7 +58,7 @@ export default function CheckoutForm() {
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
 
   const updateField = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async () => {
@@ -44,7 +67,7 @@ export default function CheckoutForm() {
 
     try {
       const result = await createOrder.mutateAsync({
-        cart: cart.map((item) => ({
+        cart: cart.map(item => ({
           product_id: item.productId,
           quantity: item.qty,
         })),
@@ -64,13 +87,16 @@ export default function CheckoutForm() {
           email: form.senderEmail,
           phone: form.senderPhone || undefined,
         },
-        gift_message: form.giftMessage || undefined,
+        gift_message: isGift && form.giftMessage ? form.giftMessage : undefined,
       });
 
       const resultData = result as Record<string, unknown>;
       setOrderResult({
-        payUrl: (resultData.pay_url as string) || (resultData.payment_url as string),
-        orderNumber: (resultData.order_number as string) || (resultData.order_id as string),
+        payUrl:
+          (resultData.pay_url as string) || (resultData.payment_url as string),
+        orderNumber:
+          (resultData.order_number as string) ||
+          (resultData.order_id as string),
       });
       setCart([]);
       setStep(3);
@@ -92,7 +118,7 @@ export default function CheckoutForm() {
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="max-w-md mx-auto p-6 rounded-[28px] bg-white/90 backdrop-blur-sm shadow-xl border border-white/50 text-center"
+        className="mx-auto max-w-md rounded-[24px] border border-white/70 bg-white/90 p-6 text-center shadow-xl shadow-blue-500/10 backdrop-blur-sm"
       >
         <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
           <Check className="w-8 h-8 text-green-500" />
@@ -113,7 +139,7 @@ export default function CheckoutForm() {
             href={orderResult.payUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block px-6 py-3 rounded-full bg-gradient-to-r from-[#ff7b89] to-[#ff8e72] text-white font-semibold shadow-lg hover:shadow-xl transition-shadow"
+            className="inline-block rounded-2xl bg-gradient-to-r from-[#6d5dfc] to-[#1992ff] px-6 py-3 font-semibold text-white shadow-lg shadow-blue-500/20 transition-shadow hover:shadow-xl"
           >
             Pay Now
           </a>
@@ -123,7 +149,7 @@ export default function CheckoutForm() {
             setOrderResult(null);
             setState("onboarding");
           }}
-          className="block mx-auto mt-4 text-sm text-[#ff7b89] hover:underline"
+          className="mx-auto mt-4 block text-sm text-[#2563eb] hover:underline"
         >
           Back to Chat
         </button>
@@ -135,7 +161,7 @@ export default function CheckoutForm() {
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-md mx-auto p-5 rounded-[28px] bg-white/90 backdrop-blur-sm shadow-xl border border-white/50"
+      className="mx-auto max-w-md rounded-[24px] border border-white/70 bg-white/90 p-5 shadow-xl shadow-blue-500/10 backdrop-blur-sm"
     >
       {/* Stepper */}
       <div className="flex items-center justify-between mb-6 px-2">
@@ -144,7 +170,7 @@ export default function CheckoutForm() {
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
                 i <= step
-                  ? "bg-[#ff7b89] text-white"
+                  ? "bg-[#2563eb] text-white"
                   : "bg-gray-200 text-gray-400"
               }`}
             >
@@ -153,7 +179,7 @@ export default function CheckoutForm() {
             {i < steps.length - 1 && (
               <div
                 className={`w-8 h-0.5 rounded ${
-                  i < step ? "bg-[#ff7b89]" : "bg-gray-200"
+                  i < step ? "bg-[#2563eb]" : "bg-gray-200"
                 }`}
               />
             )}
@@ -180,8 +206,8 @@ export default function CheckoutForm() {
               type="text"
               placeholder="Full Name *"
               value={form.recipientName}
-              onChange={(e) => updateField("recipientName", e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#fdf6f6] border border-[#ff7b89]/10 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7b89]/20"
+              onChange={e => updateField("recipientName", e.target.value)}
+              className="w-full rounded-xl border border-blue-100 bg-[#f3f7ff] py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20"
             />
           </div>
           <div className="relative">
@@ -190,8 +216,8 @@ export default function CheckoutForm() {
               type="text"
               placeholder="Address *"
               value={form.recipientAddress}
-              onChange={(e) => updateField("recipientAddress", e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#fdf6f6] border border-[#ff7b89]/10 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7b89]/20"
+              onChange={e => updateField("recipientAddress", e.target.value)}
+              className="w-full rounded-xl border border-blue-100 bg-[#f3f7ff] py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20"
             />
           </div>
           <div className="relative">
@@ -200,8 +226,8 @@ export default function CheckoutForm() {
               type="text"
               placeholder="City * (e.g., Colombo, Kandy)"
               value={form.recipientCity}
-              onChange={(e) => updateField("recipientCity", e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#fdf6f6] border border-[#ff7b89]/10 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7b89]/20"
+              onChange={e => updateField("recipientCity", e.target.value)}
+              className="w-full rounded-xl border border-blue-100 bg-[#f3f7ff] py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20"
             />
           </div>
           <div className="relative">
@@ -210,8 +236,8 @@ export default function CheckoutForm() {
               type="tel"
               placeholder="Phone Number *"
               value={form.recipientPhone}
-              onChange={(e) => updateField("recipientPhone", e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#fdf6f6] border border-[#ff7b89]/10 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7b89]/20"
+              onChange={e => updateField("recipientPhone", e.target.value)}
+              className="w-full rounded-xl border border-blue-100 bg-[#f3f7ff] py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20"
             />
           </div>
           <div className="relative">
@@ -220,8 +246,8 @@ export default function CheckoutForm() {
               type="email"
               placeholder="Email (optional)"
               value={form.recipientEmail}
-              onChange={(e) => updateField("recipientEmail", e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#fdf6f6] border border-[#ff7b89]/10 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7b89]/20"
+              onChange={e => updateField("recipientEmail", e.target.value)}
+              className="w-full rounded-xl border border-blue-100 bg-[#f3f7ff] py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20"
             />
           </div>
         </motion.div>
@@ -245,8 +271,9 @@ export default function CheckoutForm() {
             <input
               type="date"
               value={form.deliveryDate}
-              onChange={(e) => updateField("deliveryDate", e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#fdf6f6] border border-[#ff7b89]/10 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7b89]/20"
+              min={new Date().toISOString().slice(0, 10)}
+              onChange={e => updateField("deliveryDate", e.target.value)}
+              className="w-full rounded-xl border border-blue-100 bg-[#f3f7ff] py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20"
             />
           </div>
           <div className="relative">
@@ -255,21 +282,104 @@ export default function CheckoutForm() {
               type="text"
               placeholder="Delivery Instructions (optional)"
               value={form.deliveryInstructions}
-              onChange={(e) =>
+              onChange={e =>
                 updateField("deliveryInstructions", e.target.value)
               }
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#fdf6f6] border border-[#ff7b89]/10 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7b89]/20"
+              className="w-full rounded-xl border border-blue-100 bg-[#f3f7ff] py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20"
             />
           </div>
-          <div className="relative">
-            <Gift className="absolute left-3 top-3 w-4 h-4 text-[#727288]" />
-            <textarea
-              placeholder="Gift Message (optional)"
-              value={form.giftMessage}
-              onChange={(e) => updateField("giftMessage", e.target.value)}
-              rows={3}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#fdf6f6] border border-[#ff7b89]/10 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7b89]/20 resize-none"
-            />
+          {/* Gift message */}
+          <div className="rounded-2xl border border-violet-100 bg-gradient-to-br from-[#faf5ff] to-[#f3f7ff] p-4">
+            <button
+              type="button"
+              onClick={() => setIsGift(v => !v)}
+              className="flex w-full items-center justify-between"
+            >
+              <span className="flex items-center gap-2 text-sm font-semibold text-[#020333]">
+                <Gift className="h-4 w-4 text-[#7c3aed]" />
+                Send as a gift?
+              </span>
+              <span
+                className={`relative h-6 w-11 rounded-full transition-colors ${
+                  isGift ? "bg-[#7c3aed]" : "bg-gray-300"
+                }`}
+              >
+                <motion.span
+                  layout
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow ${
+                    isGift ? "translate-x-[22px]" : "translate-x-0.5"
+                  }`}
+                />
+              </span>
+            </button>
+
+            <AnimatePresence initial={false}>
+              {isGift && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-4 space-y-3">
+                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#7c3aed]">
+                      <Sparkles className="h-3 w-3" />
+                      Quick messages
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {GIFT_TEMPLATES.map(t => (
+                        <button
+                          type="button"
+                          key={t}
+                          onClick={() => updateField("giftMessage", t)}
+                          className="rounded-full border border-violet-100 bg-white/80 px-2.5 py-1 text-[11px] font-medium text-[#5b3aa8] transition-colors hover:bg-white"
+                        >
+                          {t.length > 24 ? `${t.slice(0, 22)}…` : t}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div>
+                      <textarea
+                        placeholder="Write your gift message…"
+                        value={form.giftMessage}
+                        maxLength={GIFT_MESSAGE_MAX}
+                        onChange={e => updateField("giftMessage", e.target.value)}
+                        rows={3}
+                        className="w-full resize-none rounded-xl border border-violet-100 bg-white/80 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20"
+                      />
+                      <div className="mt-1 text-right text-[10px] text-[#9098bd]">
+                        {form.giftMessage.length}/{GIFT_MESSAGE_MAX}
+                      </div>
+                    </div>
+
+                    {/* Live gift-card preview */}
+                    {form.giftMessage.trim() && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#7c3aed] via-[#6157f5] to-[#1992ff] p-4 text-white shadow-lg shadow-violet-500/20"
+                      >
+                        <Gift className="absolute -right-2 -top-2 h-16 w-16 opacity-15" />
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-white/70">
+                          Gift card
+                        </p>
+                        <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed">
+                          {form.giftMessage}
+                        </p>
+                        {form.senderName && (
+                          <p className="mt-3 text-xs italic text-white/85">
+                            — {form.senderName}
+                          </p>
+                        )}
+                      </motion.div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </motion.div>
       )}
@@ -293,8 +403,8 @@ export default function CheckoutForm() {
               type="text"
               placeholder="Your Name *"
               value={form.senderName}
-              onChange={(e) => updateField("senderName", e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#fdf6f6] border border-[#ff7b89]/10 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7b89]/20"
+              onChange={e => updateField("senderName", e.target.value)}
+              className="w-full rounded-xl border border-blue-100 bg-[#f3f7ff] py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20"
             />
           </div>
           <div className="relative">
@@ -303,8 +413,8 @@ export default function CheckoutForm() {
               type="email"
               placeholder="Your Email *"
               value={form.senderEmail}
-              onChange={(e) => updateField("senderEmail", e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#fdf6f6] border border-[#ff7b89]/10 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7b89]/20"
+              onChange={e => updateField("senderEmail", e.target.value)}
+              className="w-full rounded-xl border border-blue-100 bg-[#f3f7ff] py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20"
             />
           </div>
           <div className="relative">
@@ -313,17 +423,17 @@ export default function CheckoutForm() {
               type="tel"
               placeholder="Your Phone (optional)"
               value={form.senderPhone}
-              onChange={(e) => updateField("senderPhone", e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#fdf6f6] border border-[#ff7b89]/10 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7b89]/20"
+              onChange={e => updateField("senderPhone", e.target.value)}
+              className="w-full rounded-xl border border-blue-100 bg-[#f3f7ff] py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20"
             />
           </div>
 
           {/* Order Summary */}
-          <div className="mt-4 p-4 rounded-xl bg-[#fdf6f6] border border-[#ff7b89]/10">
+          <div className="mt-4 rounded-xl border border-blue-100 bg-[#f3f7ff] p-4">
             <h4 className="text-sm font-semibold text-[#020333] mb-2">
               Order Summary
             </h4>
-            {cart.map((item) => (
+            {cart.map(item => (
               <div
                 key={item.productId}
                 className="flex justify-between text-xs mb-1"
@@ -336,10 +446,23 @@ export default function CheckoutForm() {
                 </span>
               </div>
             ))}
-            <div className="border-t border-[#ff7b89]/10 mt-2 pt-2 flex justify-between font-bold">
+            <div className="mt-2 flex justify-between border-t border-blue-100 pt-2 font-bold">
               <span className="text-[#020333]">Total</span>
-              <span className="text-[#ff7b89]">LKR {total.toLocaleString()}</span>
+              <span className="text-[#2563eb]">
+                LKR {total.toLocaleString()}
+              </span>
             </div>
+            {isGift && form.giftMessage.trim() && (
+              <div className="mt-3 flex items-start gap-2 rounded-lg border border-violet-100 bg-white/70 p-2.5 text-xs">
+                <Gift className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#7c3aed]" />
+                <div>
+                  <span className="font-semibold text-[#5b3aa8]">
+                    Gift message:{" "}
+                  </span>
+                  <span className="text-[#5b5b6e]">{form.giftMessage}</span>
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
       )}
@@ -361,7 +484,7 @@ export default function CheckoutForm() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setStep(step + 1)}
-            className="flex-1 py-3 rounded-full bg-gradient-to-r from-[#ff7b89] to-[#ff8e72] text-white font-semibold text-sm shadow-lg shadow-[#ff7b89]/25"
+            className="flex-1 rounded-2xl bg-gradient-to-r from-[#6d5dfc] to-[#1992ff] py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/25"
           >
             Continue
           </motion.button>
@@ -371,7 +494,7 @@ export default function CheckoutForm() {
             whileTap={{ scale: 0.98 }}
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex-1 py-3 rounded-full bg-gradient-to-r from-[#020333] to-[#1a1a4e] text-white font-semibold text-sm shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#1d4ed8] to-[#6d5dfc] py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 disabled:opacity-50"
           >
             {isSubmitting ? (
               <>

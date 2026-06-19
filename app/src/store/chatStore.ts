@@ -11,6 +11,21 @@ export type ChatState =
   | "checkout"
   | "order_status";
 
+export interface Product {
+  product_id: string;
+  name: string;
+  price: number;
+  currency?: string;
+  image?: string;
+  description?: string;
+  in_stock?: boolean;
+  stock_label?: string;
+  ships_internationally?: boolean;
+  url?: string;
+  category?: string;
+  vendor?: string;
+}
+
 export interface ChatMessage {
   id: number;
   sessionId: string;
@@ -22,23 +37,10 @@ export interface ChatMessage {
       arguments: Record<string, unknown>;
       result?: unknown;
     }>;
+    // Products parsed from a search result, rendered inline as cards.
+    products?: Product[];
   };
   createdAt: Date;
-}
-
-export interface Product {
-  product_id?: string;
-  id?: string;
-  name?: string;
-  title?: string;
-  price?: number;
-  currency?: string;
-  image?: string;
-  images?: string[];
-  description?: string;
-  in_stock?: boolean;
-  url?: string;
-  category?: string;
 }
 
 interface ChatStore {
@@ -48,11 +50,13 @@ interface ChatStore {
 
   // Session
   sessionId: string;
+  newChat: () => void;
 
   // Messages
   messages: ChatMessage[];
   setMessages: (messages: ChatMessage[]) => void;
   addMessage: (message: ChatMessage) => void;
+  updateMessage: (id: number, patch: Partial<ChatMessage>) => void;
 
   // Input
   inputText: string;
@@ -72,10 +76,6 @@ interface ChatStore {
   addToCart: (item: ChatStore["cart"][0]) => void;
   removeFromCart: (productId: string) => void;
 
-  // Products display
-  displayedProducts: Product[];
-  setDisplayedProducts: (products: Product[]) => void;
-
   // Intent
   intent: string | null;
   setIntent: (intent: string | null) => void;
@@ -92,11 +92,26 @@ export const useChatStore = create<ChatStore>()(
       setState: (state) => set({ state }),
 
       sessionId: generateSessionId(),
+      newChat: () =>
+        set({
+          sessionId: generateSessionId(),
+          messages: [],
+          cart: [],
+          intent: null,
+          inputText: "",
+          state: "onboarding",
+        }),
 
       messages: [],
       setMessages: (messages) => set({ messages }),
       addMessage: (message) =>
         set({ messages: [...get().messages, message] }),
+      updateMessage: (id, patch) =>
+        set({
+          messages: get().messages.map((m) =>
+            m.id === id ? { ...m, ...patch } : m
+          ),
+        }),
 
       inputText: "",
       setInputText: (text) => set({ inputText: text }),
@@ -123,9 +138,6 @@ export const useChatStore = create<ChatStore>()(
         set({
           cart: get().cart.filter((c) => c.productId !== productId),
         }),
-
-      displayedProducts: [],
-      setDisplayedProducts: (products) => set({ displayedProducts: products }),
 
       intent: null,
       setIntent: (intent) => set({ intent }),

@@ -70,10 +70,10 @@ vec3 brandGradient(vec2 uv, float time) {
   float finalNoise = noise1 * 0.6 + noise2 * 0.4;
   float t = finalNoise * 0.5 + 0.5;
 
-  vec3 c1 = vec3(1.0, 0.92, 0.46);
-  vec3 c2 = vec3(1.0, 0.65, 0.23);
-  vec3 c3 = vec3(1.0, 0.48, 0.45);
-  vec3 c4 = vec3(0.55, 0.23, 0.39);
+  vec3 c1 = vec3(0.79, 0.83, 1.0);
+  vec3 c2 = vec3(0.58, 0.46, 0.94);
+  vec3 c3 = vec3(0.25, 0.55, 0.96);
+  vec3 c4 = vec3(0.80, 0.66, 1.0);
 
   float phase = t * 3.0;
   float segment = floor(phase);
@@ -100,7 +100,7 @@ vec3 brandGradient(vec2 uv, float time) {
 void main() {
   vec2 uv = vUv;
   vec3 color = brandGradient(uv, u_time);
-  float vignette = 1.0 - 0.3 * length(vUv - 0.5);
+  float vignette = 1.0 - 0.24 * length(vUv - 0.5);
   color *= vignette;
   gl_FragColor = vec4(color, 1.0);
 }
@@ -118,7 +118,11 @@ export default function GradientBackground() {
     if (!gl) return;
 
     // Compile shaders
-    function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+    function createShader(
+      gl: WebGLRenderingContext,
+      type: number,
+      source: string
+    ) {
       const shader = gl.createShader(type)!;
       gl.shaderSource(shader, source);
       gl.compileShader(shader);

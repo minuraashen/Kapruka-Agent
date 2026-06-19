@@ -1,11 +1,20 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "../middleware";
-import { callKaprukaTool } from "../lib/mcp-client";
+import { callKaprukaTool, enrichProductsWithImages } from "../lib/mcp-client";
+import {
+  extractMarkdown,
+  parseSearchResults,
+  parseProductDetail,
+} from "../lib/kapruka-parse";
 import { getDb } from "../queries/connection";
-import { chatMessages, chatSessions } from "@db/schema";
+import { chatMessages, chatSessions, orders } from "@db/schema";
 import { eq, desc } from "drizzle-orm";
 import OpenAI from "openai";
 import { env } from "../lib/env";
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function getLlmClient() {
   if (!env.llmApiKey || !env.llmModel) {
@@ -190,26 +199,65 @@ const TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
   },
 ];
 
-const SYSTEM_PROMPT = `You are Kiki, a warm, witty, and helpful AI shopping assistant for Kapruka — Sri Lanka's largest e-commerce platform. You help customers discover products, send gifts, and complete purchases.
+const SYSTEM_PROMPT = `You are Kiki, a warm, witty, and helpful AI shopping assistant for Kapruka — Sri Lanka's largest e-commerce platform. You help customers discover products, send gifts, and complete purchases. Today's date is ${new Date().toISOString().slice(0, 10)}.
 
 Your personality:
-- Friendly and warm like a helpful friend
+- Friendly and warm like a helpful friend ("aiya/akki" energy, never pushy)
 - A bit playful and witty — use light humor
 - Enthusiastic about finding the perfect gift or product
 - Patient and thorough when collecting order details
-- Use Sri Lankan context naturally (mentioning cities, occasions like Avurudu, etc.)
+- Use Sri Lankan context naturally (cities like Colombo, Kandy, Galle; occasions like Avurudu, Vesak, Christmas, birthdays)
+
+Language:
+- Reply in the language the customer uses. If they write in Sinhala (සිංහල) reply in Sinhala. If they write in Tanglish/Singlish (Sinhala in English letters, e.g. "mata cake ekak ganna ona"), match that style warmly.
+- Default to English when the customer writes in English.
 
 Guidelines:
-- Always show products with images when available
-- Guide users step by step through checkout
-- Before creating an order, you MUST collect: recipient name, address, city, phone, delivery date, sender name and email
-- Offer to add gift messages for gift orders
-- Default currency is LKR (Sri Lankan Rupees)
-- If a product has variants, ask which one they prefer
-- When showing search results, highlight the top 3-5 most relevant items
-- For delivery, remind users that cakes/flowers need a product_id for perishable checks
+- The product search results you receive already render as beautiful visual cards in the UI, so DON'T re-list every product as text. Instead, briefly introduce them ("Here are a few lovely options 🍫") and add a helpful opinion or recommendation about the top pick.
+- Guide users step by step toward checkout. Help them go from "I'm not sure" to "add to cart".
+- Before creating an order, you MUST collect: recipient name, address, city, phone, delivery date, plus sender name and email. Confirm the order summary before calling kapruka_create_order.
+- Proactively offer to add a gift message for gift orders.
+- Default currency is LKR (Sri Lankan Rupees). Always format prices like "LKR 6,850".
+- When checking delivery for cakes/flowers, pass the product_id so perishable rules apply.
+- If you're unsure what someone wants, ask one focused question rather than guessing.
 
-Keep responses concise but warm. Use occasional emojis sparingly. Don't be overly formal.`;
+Keep responses concise but warm. Use a few tasteful emojis. Don't be overly formal, and never dump raw JSON or IDs at the customer.`;
+
+// Best-effort: record the order the agent created so we have a local history.
+async function persistOrder(
+  sessionId: string,
+  args: Record<string, unknown>,
+  rawResult: unknown
+) {
+  try {
+    const text = extractMarkdown(rawResult);
+    const payUrl =
+      text.match(/(https?:\/\/\S*(?:pay|checkout|order)\S*)/i)?.[1] ?? null;
+    const orderNumber =
+      text.match(/order[^\w]*(?:number|#|id)[:\s]*([A-Z0-9-]{4,})/i)?.[1] ??
+      null;
+    const recipient = (args.recipient ?? {}) as Record<string, string>;
+    const delivery = (args.delivery ?? {}) as Record<string, string>;
+
+    await getDb()
+      .insert(orders)
+      .values({
+        sessionId,
+        kaprukaOrderNumber: orderNumber,
+        payUrl,
+        status: payUrl ? "awaiting_payment" : "pending",
+        currency: (args.currency as string) ?? "LKR",
+        recipientName: recipient.name ?? null,
+        recipientAddress: recipient.address ?? null,
+        recipientCity: recipient.city ?? null,
+        deliveryDate: delivery.date ?? null,
+        giftMessage: (args.gift_message as string) ?? null,
+        items: args.cart ?? [],
+      });
+  } catch (error) {
+    console.error("[orders] Failed to persist order:", error);
+  }
+}
 
 export const chatRouter = createRouter({
   sendMessage: publicQuery
@@ -269,22 +317,39 @@ export const chatRouter = createRouter({
 
       // Up to 5 iterations of tool calling
       for (let i = 0; i < 5; i++) {
-        let response: OpenAI.Chat.ChatCompletion;
+        let response: OpenAI.Chat.ChatCompletion | undefined;
 
-        try {
-          response = await openrouter.chat.completions.create({
-            model: env.llmModel,
-            messages: messagesForAI,
-            tools: TOOLS,
-            tool_choice: "auto",
-            temperature: 0.8,
-          });
-        } catch (error) {
-          const errorMsg = error instanceof Error ? error.message : String(error);
-          console.error("[LLM] Chat completion failed:", errorMsg);
-          assistantContent = getLlmErrorMessage(error);
-          break;
+        // Free OpenRouter models rate-limit aggressively — retry with backoff.
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            response = await openrouter.chat.completions.create({
+              model: env.llmModel,
+              messages: messagesForAI,
+              tools: TOOLS,
+              tool_choice: "auto",
+              temperature: 0.8,
+            });
+            break;
+          } catch (error) {
+            const status =
+              error && typeof error === "object"
+                ? (error as { status?: number }).status
+                : undefined;
+            const errorMsg =
+              error instanceof Error ? error.message : String(error);
+            if (status === 429 && attempt < 2) {
+              const delay = 1500 * (attempt + 1);
+              console.warn(`[LLM] 429 rate-limit; retrying in ${delay}ms`);
+              await sleep(delay);
+              continue;
+            }
+            console.error("[LLM] Chat completion failed:", errorMsg);
+            assistantContent = getLlmErrorMessage(error);
+            break;
+          }
         }
+
+        if (!response) break;
 
         const message = response.choices[0].message;
 
@@ -318,11 +383,36 @@ export const chatRouter = createRouter({
             const functionArgs = JSON.parse(toolCall.function.arguments);
 
             try {
-              const result = await callKaprukaTool(
+              const rawResult = await callKaprukaTool(
                 functionName,
                 functionArgs,
                 functionName !== "kapruka_create_order"
               );
+
+              // The MCP returns Markdown. For product tools we parse it into
+              // structured data (with images) so the UI can render rich cards,
+              // while still handing the readable text to the model.
+              let result: unknown = rawResult;
+              let modelContent = JSON.stringify(rawResult);
+
+              if (functionName === "kapruka_search_products") {
+                const markdown = extractMarkdown(rawResult);
+                const products = await enrichProductsWithImages(
+                  parseSearchResults(markdown)
+                );
+                result = { count: products.length, products, summary: markdown };
+                modelContent = markdown;
+              } else if (functionName === "kapruka_get_product") {
+                const markdown = extractMarkdown(rawResult);
+                const product = parseProductDetail(markdown);
+                result = { product, summary: markdown };
+                modelContent = markdown;
+              } else if (functionName === "kapruka_create_order") {
+                await persistOrder(input.sessionId, functionArgs, rawResult);
+                modelContent = extractMarkdown(rawResult);
+              } else {
+                modelContent = extractMarkdown(rawResult);
+              }
 
               functionCalls.push({
                 name: functionName,
@@ -334,7 +424,7 @@ export const chatRouter = createRouter({
               messagesForAI.push({
                 role: "tool",
                 tool_call_id: toolCall.id,
-                content: JSON.stringify(result),
+                content: modelContent,
               });
             } catch (error) {
               const errorMsg =

@@ -8,8 +8,8 @@ const cards = [
     icon: Gift,
     title: "Send a Gift",
     description: "Find the perfect gift for someone special",
-    color: "from-[#ff7b89] to-[#ff8e72]",
-    shadow: "shadow-[#ff7b89]/25",
+    color: "from-[#6d5dfc] to-[#1992ff]",
+    shadow: "shadow-blue-500/20",
     intent: "gift_mode" as const,
     message: "I'd like to send a gift to someone!",
   },
@@ -18,8 +18,8 @@ const cards = [
     icon: ShoppingBag,
     title: "Shop for Myself",
     description: "Browse and buy products for yourself",
-    color: "from-[#ffa53b] to-[#ffea76]",
-    shadow: "shadow-[#ffa53b]/25",
+    color: "from-[#0ea5e9] to-[#38bdf8]",
+    shadow: "shadow-cyan-500/20",
     intent: "shop_mode" as const,
     message: "I want to shop for something!",
   },
@@ -28,8 +28,8 @@ const cards = [
     icon: PackageSearch,
     title: "Track an Order",
     description: "Check the status of your existing order",
-    color: "from-[#8c3a64] to-[#ff7b89]",
-    shadow: "shadow-[#8c3a64]/25",
+    color: "from-[#7c3aed] to-[#a78bfa]",
+    shadow: "shadow-violet-500/20",
     intent: "track_mode" as const,
     message: "I'd like to track my order",
   },
@@ -57,9 +57,11 @@ interface OnboardingCardsProps {
   onSendMessage: (msg: string) => void;
 }
 
-export default function OnboardingCards({ onSendMessage }: OnboardingCardsProps) {
-  const setState = useChatStore((s) => s.setState);
-  const setIntent = useChatStore((s) => s.setIntent);
+export default function OnboardingCards({
+  onSendMessage,
+}: OnboardingCardsProps) {
+  const setState = useChatStore(s => s.setState);
+  const setIntent = useChatStore(s => s.setIntent);
 
   const handleClick = (card: (typeof cards)[0]) => {
     setState(card.intent);
@@ -72,20 +74,20 @@ export default function OnboardingCards({ onSendMessage }: OnboardingCardsProps)
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="flex flex-col sm:flex-row gap-3 w-full max-w-lg mx-auto px-2"
+      className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-2 sm:flex-row"
     >
-      {cards.map((card) => (
+      {cards.map(card => (
         <motion.button
           key={card.id}
           variants={cardVariants}
           whileHover={{
-            scale: 1.05,
-            skewX: -2,
-            boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+            scale: 1.03,
+            y: -3,
+            boxShadow: "0 22px 44px rgba(37, 99, 235, 0.18)",
           }}
           whileTap={{ scale: 0.98 }}
           onClick={() => handleClick(card)}
-          className={`flex-1 flex flex-col items-center gap-3 p-5 rounded-[24px] bg-gradient-to-br ${card.color} ${card.shadow} shadow-lg text-white cursor-pointer transition-all duration-200`}
+          className={`flex-1 cursor-pointer rounded-[24px] bg-gradient-to-br ${card.color} ${card.shadow} flex flex-col items-center gap-3 p-5 text-white shadow-lg transition-all duration-200`}
         >
           <card.icon className="w-8 h-8" strokeWidth={1.5} />
           <div className="text-center">

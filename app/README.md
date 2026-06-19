@@ -93,10 +93,14 @@ All 7 Kapruka MCP tools are exposed through tRPC and mapped to OpenAI function d
 2. Backend stores the message and builds the conversation context
 3. The configured OpenAI-compatible LLM receives the message with all 7 Kapruka tools as function definitions
 4. AI decides which tool(s) to call (or responds directly)
-5. Backend executes tools via the MCP client, feeds results back to AI
-6. AI generates a natural language response with tool results
-7. Response stored and returned to frontend
-8. Frontend renders text + rich UI components (product carousel, checkout form)
+5. Backend executes tools via the MCP client, wrapping each tool's arguments in
+   the `{ params: ... }` envelope the Kapruka MCP expects, with retry/backoff on
+   rate-limits
+6. The MCP returns **Markdown** (not JSON). For product tools the backend parses
+   that Markdown into structured products and enriches the top results with
+   images (via `kapruka_get_product`) so the UI can render real cards
+7. AI generates a natural language response; it is stored and returned to the frontend
+8. Frontend renders text + rich UI components (inline product carousels, checkout form)
 
 ## Setup
 
@@ -110,21 +114,19 @@ DATABASE_URL=mysql://...
 APP_ID=...
 APP_SECRET=...
 
-# You need to add one LLM provider configuration:
-# Option 1: any OpenAI-compatible provider
-LLM_API_KEY=your-api-key
-LLM_BASE_URL=https://api.groq.com/openai/v1
-LLM_MODEL=llama-3.1-70b-versatile
-
-# Option 2: OpenAI fallback
-OPENAI_API_KEY=sk-your-openai-api-key-here
-OPENAI_MODEL=gpt-4o-mini
+# LLM via OpenRouter (https://openrouter.ai/) — use a tool-calling-capable model:
+LLM_API_KEY=sk-or-...
+LLM_BASE_URL=https://openrouter.ai/api/v1
+LLM_MODEL=openai/gpt-oss-120b:free
 ```
 
-Suggested free-tier-compatible providers:
-- Groq: https://console.groq.com/
-- OpenRouter: https://openrouter.ai/
-- Local Ollama: `http://localhost:11434/v1` with a local model
+The agent uses OpenAI-compatible function calling against OpenRouter. Free models
+that worked at build time: `openai/gpt-oss-120b:free`, `openai/gpt-oss-20b:free`,
+`google/gemma-4-31b-it:free`, or `openrouter/free` (auto-routing).
+
+> ⚠️ **Free models rate-limit aggressively (HTTP 429).** The backend retries with
+> backoff, but for a reliable judged demo, point `LLM_MODEL` at a small paid model
+> (e.g. `openai/gpt-4o-mini`) on the same OpenRouter key.
 
 ### Database
 

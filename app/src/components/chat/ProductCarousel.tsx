@@ -28,22 +28,22 @@ export default function ProductCarousel({ products, onAddToCart }: Props) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="relative w-full my-3"
+      className="relative my-3 w-full"
     >
       {/* Navigation Arrows */}
       {products.length > 2 && (
         <>
           <button
             onClick={() => scroll("left")}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white/90 backdrop-blur shadow-md flex items-center justify-center hover:bg-white transition-colors border border-white/50"
+            className="absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-2xl border border-white/60 bg-white/90 shadow-md backdrop-blur transition-colors hover:bg-white"
           >
-            <ChevronLeft className="w-4 h-4 text-[#020333]" />
+            <ChevronLeft className="h-4 w-4 text-[#2563eb]" />
           </button>
           <button
             onClick={() => scroll("right")}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white/90 backdrop-blur shadow-md flex items-center justify-center hover:bg-white transition-colors border border-white/50"
+            className="absolute right-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-2xl border border-white/60 bg-white/90 shadow-md backdrop-blur transition-colors hover:bg-white"
           >
-            <ChevronRight className="w-4 h-4 text-[#020333]" />
+            <ChevronRight className="h-4 w-4 text-[#2563eb]" />
           </button>
         </>
       )}
@@ -51,7 +51,7 @@ export default function ProductCarousel({ products, onAddToCart }: Props) {
       {/* Scrollable Container */}
       <div
         ref={scrollRef}
-        className="flex gap-4 overflow-x-auto py-2 px-8 scrollbar-hide"
+        className="scrollbar-hide flex gap-4 overflow-x-auto px-8 py-2"
         style={{
           scrollSnapType: "x mandatory",
           scrollbarWidth: "none",
@@ -63,7 +63,10 @@ export default function ProductCarousel({ products, onAddToCart }: Props) {
         }}
       >
         {products.map((product, index) => (
-          <div key={product.product_id || product.id || index} style={{ scrollSnapAlign: "start" }}>
+          <div
+            key={product.product_id || index}
+            style={{ scrollSnapAlign: "start" }}
+          >
             <ProductCard
               product={product}
               index={index}
