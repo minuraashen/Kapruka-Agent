@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
-import { User, Mail, ShoppingBag, Sparkles } from "lucide-react";
+import { User, Mail, Sparkles } from "lucide-react";
 import { useChatStore } from "@/store/chatStore";
+import { useT } from "@/lib/i18n";
 
 export default function Login() {
   const [name, setName] = useState("");
@@ -11,6 +12,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const loginStore = useChatStore(s => s.login);
   const theme = useChatStore(s => s.theme || "light");
+  const { t } = useT();
   const navigate = useNavigate();
 
   const handleLogin = (e: React.FormEvent) => {
@@ -18,11 +20,11 @@ export default function Login() {
     setError("");
 
     if (!name.trim()) {
-      setError("Please enter your name.");
+      setError(t("login.errName"));
       return;
     }
     if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
-      setError("Please enter a valid email address.");
+      setError(t("login.errEmail"));
       return;
     }
 
@@ -83,7 +85,7 @@ export default function Login() {
             className="text-2xl font-bold tracking-tight"
             style={{ fontFamily: "Quicksand, sans-serif" }}
           >
-            Welcome to Kapruka Kiki
+            {t("login.welcome")}
           </h2>
           <p
             className={`mt-1.5 text-xs font-semibold ${
@@ -91,7 +93,7 @@ export default function Login() {
             }`}
             style={{ fontFamily: "Quicksand, sans-serif" }}
           >
-            Your dynamic AI shopping companion
+            {t("login.sub")}
           </p>
         </div>
 
@@ -114,7 +116,7 @@ export default function Login() {
                 theme === "midnight" ? "text-slate-300" : "text-[#38406f]"
               }`}
             >
-              Your Name
+              {t("login.name")}
             </label>
             <div className="relative flex items-center">
               <User
@@ -127,7 +129,7 @@ export default function Login() {
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="e.g. John Doe"
+                placeholder={t("login.namePlaceholder")}
                 disabled={isLoading}
                 className={`w-full rounded-2xl border py-3.5 pl-11 pr-4 text-sm focus:outline-none transition-all duration-300 ${
                   theme === "midnight"
@@ -145,7 +147,7 @@ export default function Login() {
                 theme === "midnight" ? "text-slate-300" : "text-[#38406f]"
               }`}
             >
-              Email Address
+              {t("login.email")}
             </label>
             <div className="relative flex items-center">
               <Mail
@@ -158,7 +160,7 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="e.g. john@example.com"
+                placeholder={t("login.emailPlaceholder")}
                 disabled={isLoading}
                 className={`w-full rounded-2xl border py-3.5 pl-11 pr-4 text-sm focus:outline-none transition-all duration-300 ${
                   theme === "midnight"
@@ -183,7 +185,7 @@ export default function Login() {
             ) : (
               <>
                 <Sparkles className="h-4 w-4" />
-                Let&apos;s Start Shopping
+                {t("login.start")}
               </>
             )}
           </motion.button>
@@ -192,7 +194,7 @@ export default function Login() {
         {/* Divider */}
         <div className="my-6 flex items-center justify-between gap-3 opacity-60">
           <div className={`h-[1px] flex-1 ${theme === 'midnight' ? 'bg-white/10' : 'bg-slate-300'}`} />
-          <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Or</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">{t("login.or")}</span>
           <div className={`h-[1px] flex-1 ${theme === 'midnight' ? 'bg-white/10' : 'bg-slate-300'}`} />
         </div>
 
@@ -206,7 +208,7 @@ export default function Login() {
               : "border-white/60 bg-white/50 text-[#4f5b91] hover:bg-white/80"
           }`}
         >
-          Continue as Guest
+          {t("login.guest")}
         </button>
       </motion.div>
     </div>

@@ -148,3 +148,124 @@ export function parseProductDetail(markdown: string): ParsedProduct | null {
     description,
   };
 }
+
+// ── Order / delivery / tracking parsers ────────────────────────────────────
+// The MCP returns Markdown for these too. We parse out the useful bits for
+// rich UI cards, but always keep the original text as `raw` for a graceful
+// fallback when a field can't be matched.
+
+export interface ParsedOrder {
+  orderNumber?: string;
+  payUrl?: string;
+  total?: number;
+  currency?: string;
+  raw: string;
+}
+
+export function parseOrderResult(raw: unknown): ParsedOrder {
+  const text = extractMarkdown(raw);
+  const payUrl =
+    text.match(/\]\((https?:\/\/[^)]*(?:pay|checkout|order|payment)[^)]*)\)/i)?.[1] ??
+    text.match(/(https?:\/\/\S*(?:pay|checkout|order|payment)\S*)/i)?.[1];
+  const orderNumber =
+    text.match(/order\s*(?:number|no\.?|#|id)\s*[:#]?\s*`?([A-Z0-9][A-Z0-9-]{3,})`?/i)?.[1] ??
+    text.match(/\border\s+`?([A-Z0-9]{4,}[A-Z0-9-]*)`?/i)?.[1] ??
+    text.match(/#\s*([A-Z0-9][A-Z0-9-]{3,})/)?.[1];
+
+  let total: number | undefined;
+  let currency: string | undefined;
+  const totalLine = text.match(/total[^\n]*?(LKR|USD|GBP|AUD|CAD|EUR)\s*([\d,]+(?:\.\d+)?)/i);
+  if (totalLine) {
+    currency = totalLine[1].toUpperCase();
+    total = Number(totalLine[2].replace(/,/g, ""));
+  }
+
+  return {
+    orderNumber: orderNumber?.trim(),
+    payUrl: payUrl?.trim(),
+    total,
+    currency,
+    raw: text,
+  };
+}
+
+export interface ParsedDelivery {
+  available: boolean;
+  city?: string;
+  date?: string;
+  fee?: number;
+  currency?: string;
+  note?: string;
+  raw: string;
+}
+
+export function parseDeliveryResult(raw: unknown): ParsedDelivery {
+  const text = extractMarkdown(raw);
+  // Treat error responses (e.g. "Error (city_not_found): Unknown city ...")
+  // and explicit negatives as NOT available, so the UI never shows a green
+  // "delivery available" card for what is really a failure.
+  const available =
+    !/\b(error|unknown city|not found|invalid|not available|unavailable|cannot deliver|can't deliver|no delivery|not deliverable|not possible)\b/i.test(
+      text
+    );
+
+  // Fee: prefer a keyworded line ("fee/charge/rate ... LKR 300"); otherwise
+  // fall back to the first currency amount anywhere in the (short) response.
+  const feeMatch =
+    text.match(
+      /(?:fee|charge|cost|rate|flat rate)[^\n]*?(LKR|USD|GBP|AUD|CAD|EUR)\s*([\d,]+(?:\.\d+)?)/i
+    ) ?? text.match(/(LKR|USD|GBP|AUD|CAD|EUR)\s*([\d,]+(?:\.\d+)?)/i);
+  const fee = feeMatch ? Number(feeMatch[2].replace(/,/g, "")) : undefined;
+  const currency = feeMatch ? feeMatch[1].toUpperCase() : undefined;
+
+  // City: the response title is "## Delivery to <City> on <date>".
+  const cityMatch =
+    text.match(/delivery to\s+(.+?)\s+on\b/i) ??
+    text.match(/\b(?:to|city)\s*[:\-]?\s*([A-Za-z][A-Za-z0-9\s]{1,30})/i);
+  const dateMatch = text.match(/(\d{4}-\d{2}-\d{2})/);
+
+  return {
+    available,
+    city: cityMatch?.[1]?.trim(),
+    date: dateMatch?.[1],
+    fee,
+    currency,
+    note: text.split("\n").map((l) => l.trim()).find((l) => l.length > 0),
+    raw: text,
+  };
+}
+
+export interface ParsedTracking {
+  orderNumber?: string;
+  status?: string;
+  steps?: Array<{ label: string; done: boolean }>;
+  raw: string;
+}
+
+export function parseTrackingResult(raw: unknown): ParsedTracking {
+  const text = extractMarkdown(raw);
+  const orderNumber =
+    text.match(/order\s*(?:number|no\.?|#|id)\s*[:#]?\s*`?([A-Z0-9][A-Z0-9-]{3,})`?/i)?.[1] ??
+    text.match(/#\s*([A-Z0-9][A-Z0-9-]{3,})/)?.[1];
+  const status =
+    text.match(/\*\*Status\*\*:\s*(.+)/i)?.[1]?.trim() ??
+    text.match(/status\s*[:\-]\s*(.+)/i)?.[1]?.trim();
+
+  // Pull bullet lines as a loose timeline of milestones.
+  const steps = text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => /^[-*•]\s+/.test(l))
+    .map((l) => {
+      const label = l.replace(/^[-*•]\s+/, "").replace(/[*`]/g, "").trim();
+      const done = /✓|✅|done|completed|delivered|dispatched|shipped|confirmed|packed/i.test(label);
+      return { label, done };
+    });
+
+  return {
+    orderNumber: orderNumber?.trim(),
+    status,
+    steps: steps.length > 0 ? steps : undefined,
+    raw: text,
+  };
+}

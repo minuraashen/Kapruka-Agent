@@ -14,8 +14,15 @@ import {
   LogOut,
 } from "lucide-react";
 import { useChatStore } from "@/store/chatStore";
-import type { ChatMessage, Product } from "@/store/chatStore";
+import type {
+  ChatMessage,
+  Product,
+  DeliveryInfo,
+  TrackingInfo,
+  OrderInfo,
+} from "@/store/chatStore";
 import { trpc } from "@/providers/trpc";
+import { useT } from "@/lib/i18n";
 import GradientBackground from "@/components/effects/GradientBackground";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatBubble from "@/components/chat/ChatBubble";
@@ -24,8 +31,21 @@ import ProductCarousel from "@/components/chat/ProductCarousel";
 import ChatInputBar from "@/components/chat/ChatInputBar";
 import CartDrawer from "@/components/chat/CartDrawer";
 import CheckoutForm from "@/components/chat/CheckoutForm";
+import DeliveryCard from "@/components/chat/DeliveryCard";
+import OrderTrackingCard from "@/components/chat/OrderTrackingCard";
+import OrderConfirmationCard from "@/components/chat/OrderConfirmationCard";
+import ThinkingIndicator from "@/components/chat/ThinkingIndicator";
+import GiftGenie from "@/components/chat/GiftGenie";
+import FestivalChips from "@/components/chat/FestivalChips";
+
+interface NavItem {
+  icon: typeof Compass;
+  label: string;
+  prompt: string;
+}
 
 function SplashScreen({ onStart }: { onStart: () => void }) {
+  const { t } = useT();
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -75,7 +95,7 @@ function SplashScreen({ onStart }: { onStart: () => void }) {
         className="mt-6 text-center text-sm font-semibold text-[#5f67a8] sm:text-base"
         style={{ fontFamily: "Quicksand, sans-serif" }}
       >
-        Your Smart Shopping Companion for Kapruka
+        {t("splash.tagline")}
       </motion.p>
 
       <motion.button
@@ -90,19 +110,12 @@ function SplashScreen({ onStart }: { onStart: () => void }) {
       >
         <span className="flex items-center gap-2">
           <Sparkles className="h-5 w-5" />
-          Let&apos;s Shop!
+          {t("splash.cta")}
         </span>
       </motion.button>
     </motion.div>
   );
 }
-
-const navItems = [
-  { icon: Compass, label: "Explore", prompt: "Show me popular Kapruka gifts and hampers right now." },
-  { icon: Gift, label: "Gifts", prompt: "Help me find a thoughtful gift for someone special." },
-  { icon: ShoppingBag, label: "Shop", prompt: "I want to shop for something for myself." },
-  { icon: PackageSearch, label: "Track order", prompt: "I'd like to track my order." },
-];
 
 export const themeStyles = {
   light: {
@@ -165,6 +178,7 @@ export const themeStyles = {
 };
 
 function LeftSidebar({
+  navItems,
   onSendMessage,
   onNewChat,
   styles,
@@ -172,6 +186,7 @@ function LeftSidebar({
   logout,
   theme,
 }: {
+  navItems: NavItem[];
   onSendMessage: (message: string) => void;
   onNewChat: () => void;
   styles: typeof themeStyles.light;
@@ -179,6 +194,7 @@ function LeftSidebar({
   logout: () => void;
   theme: string;
 }) {
+  const { t } = useT();
   return (
     <aside className={`hidden w-[200px] shrink-0 flex-col border-r px-4 py-5 backdrop-blur-2xl lg:flex ${styles.sidebarBg}`}>
       <div className="mb-7 flex items-center gap-3">
@@ -201,7 +217,7 @@ function LeftSidebar({
         className="mb-4 flex w-full items-center gap-2 rounded-2xl bg-gradient-to-r from-[#482880] to-[#6d5dfc] px-3 py-2.5 text-sm font-semibold text-white shadow-md shadow-purple-500/20 transition-shadow hover:shadow-lg"
       >
         <MessageSquarePlus className="h-4 w-4" />
-        New chat
+        {t("sidebar.newChat")}
       </button>
 
       <nav className="mb-4 space-y-1">
@@ -221,9 +237,9 @@ function LeftSidebar({
         <div className="mb-4 flex h-8 w-8 items-center justify-center rounded-2xl bg-white/20">
           <Sparkles className="h-4 w-4" />
         </div>
-        <p className="text-xs font-bold">Live Kapruka catalog</p>
+        <p className="text-xs font-bold">{t("sidebar.liveTitle")}</p>
         <p className="mt-1 text-[10px] leading-relaxed text-white/80">
-          Real products, real delivery quotes, real guest checkout.
+          {t("sidebar.liveSub")}
         </p>
       </div>
 
@@ -236,13 +252,13 @@ function LeftSidebar({
             {user?.name ? user.name[0] : "G"}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-xs font-bold leading-none">{user?.name || "Guest"}</p>
+            <p className="truncate text-xs font-bold leading-none">{user?.name || t("sidebar.guest")}</p>
             <p className={`truncate text-[9px] mt-0.5 ${theme === 'midnight' ? 'text-slate-400' : 'text-[#745f9e]'}`}>{user?.email || "guest@kapruka.com"}</p>
           </div>
         </div>
         <button
           onClick={logout}
-          title="Log out"
+          title={t("sidebar.logout")}
           className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl transition-colors ${
             theme === 'midnight' ? 'hover:bg-white/10 text-slate-400 hover:text-red-400' : 'hover:bg-purple-100 text-slate-600 hover:text-red-500'
           }`}
@@ -265,6 +281,7 @@ function HistoryRail({
   onClearHistory: () => void;
   styles: typeof themeStyles.light;
 }) {
+  const { t } = useT();
   return (
     <aside className={`hidden w-[250px] shrink-0 flex-col border-l px-4 py-5 backdrop-blur-2xl xl:flex ${styles.sidebarBg}`}>
       <div className="mb-5 flex items-center justify-between">
@@ -273,9 +290,9 @@ function HistoryRail({
             className={`text-base font-bold ${styles.sidebarTitle}`}
             style={{ fontFamily: "Quicksand, sans-serif" }}
           >
-            This chat
+            {t("history.title")}
           </h2>
-          <p className={`text-xs ${styles.sidebarSub}`}>Your recent asks</p>
+          <p className={`text-xs ${styles.sidebarSub}`}>{t("history.sub")}</p>
         </div>
         <Clock3 className="h-4 w-4 text-[#5d6ff2]" />
       </div>
@@ -283,7 +300,7 @@ function HistoryRail({
       <div className="flex-1 space-y-2 overflow-y-auto">
         {prompts.length === 0 ? (
           <p className={`px-2 text-xs ${styles.sidebarSub}`}>
-            Your questions will show up here as you chat with Kiki.
+            {t("history.empty")}
           </p>
         ) : (
           prompts.map((item, index) => (
@@ -309,7 +326,7 @@ function HistoryRail({
           className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-white/70 px-4 py-3 text-xs font-semibold text-[#dc2626] shadow-sm transition-colors hover:bg-white"
         >
           <Trash2 className="h-4 w-4" />
-          Clear chat
+          {t("history.clear")}
         </button>
       )}
     </aside>
@@ -330,17 +347,33 @@ export default function Home() {
   const newChat = useChatStore(s => s.newChat);
   const user = useChatStore(s => s.user);
   const logout = useChatStore(s => s.logout);
+  const theme = useChatStore(s => s.theme || "light");
+
+  const { t, p } = useT();
 
   const [cartOpen, setCartOpen] = useState(false);
+  const [genieOpen, setGenieOpen] = useState(false);
+  const [streamingId, setStreamingId] = useState<number | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const greetingAddedRef = useRef<string | null>(null);
 
   const sendMessageMutation = trpc.chat.sendMessage.useMutation();
 
+  const scrollToBottom = useCallback(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
   // Auto-scroll to bottom
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
+    scrollToBottom();
+  }, [messages, isLoading, scrollToBottom]);
+
+  const navItems: NavItem[] = [
+    { icon: Compass, label: t("sidebar.explore"), prompt: p("explore") },
+    { icon: Gift, label: t("sidebar.gifts"), prompt: p("gifts") },
+    { icon: ShoppingBag, label: t("sidebar.shop"), prompt: p("shop") },
+    { icon: PackageSearch, label: t("sidebar.track"), prompt: p("track") },
+  ];
 
   // Initial greeting
   useEffect(() => {
@@ -354,10 +387,11 @@ export default function Home() {
         id: Date.now(),
         sessionId,
         role: "assistant",
-        content: `Ayubowan, ${user?.name || "there"}! 🙏 I'm **Kiki**, your shopping buddy for Kapruka. I can find gifts, cakes, flowers and more — quote delivery anywhere in Sri Lanka, and take you all the way to checkout. What are we shopping for today?`,
+        content: t("greeting", { name: user?.name || t("greeting.fallbackName") }),
         createdAt: new Date(),
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, sessionId, messages.length, addMessage, user?.name]);
 
   const handleSend = useCallback(
@@ -377,44 +411,80 @@ export default function Home() {
       setIsLoading(true);
 
       try {
+        // Pull the freshest state so the agent always sees the real cart and
+        // the full conversation (the backend is stateless).
+        const store = useChatStore.getState();
+        const history = store.messages.map(m => ({ role: m.role, content: m.content })).slice(-16);
+        const cartPayload = store.cart.map(c => ({
+          product_id: c.productId,
+          name: c.name,
+          price: c.price,
+          quantity: c.qty,
+        }));
+
         const response = await sendMessageMutation.mutateAsync({
-          sessionId,
-          message: text,
+          messages: history,
+          cart: cartPayload,
+          language: store.language || "en",
         });
 
-        // Pull any products out of the tool results to render inline cards.
+        // Pull rich results out of the agent's real tool calls.
         let products: Product[] | undefined;
+        let delivery: DeliveryInfo | undefined;
+        let tracking: TrackingInfo | undefined;
+        let order: OrderInfo | undefined;
+        const actions: string[] = [];
+
         if (response.functionCalls) {
           for (const fc of response.functionCalls) {
+            if (!actions.includes(fc.name)) actions.push(fc.name);
             const result = fc.result as
-              | { products?: Product[]; product?: Product }
+              | {
+                  products?: Product[];
+                  product?: Product;
+                  delivery?: DeliveryInfo;
+                  tracking?: TrackingInfo;
+                  order?: OrderInfo;
+                }
               | undefined;
             if (fc.name === "kapruka_search_products" && result?.products?.length) {
               products = result.products;
             } else if (fc.name === "kapruka_get_product" && result?.product) {
               products = [result.product];
-            }
-            if (fc.name === "kapruka_create_order") {
+            } else if (fc.name === "kapruka_check_delivery" && result?.delivery) {
+              delivery = result.delivery;
+            } else if (fc.name === "kapruka_track_order" && result?.tracking) {
+              tracking = result.tracking;
+            } else if (fc.name === "kapruka_create_order" && result?.order) {
+              order = result.order;
               setState("order_status");
             }
           }
         }
 
+        const assistantId = Date.now() + 1;
+        setStreamingId(assistantId);
         addMessage({
-          id: Date.now() + 1,
+          id: assistantId,
           sessionId,
           role: "assistant",
           content: response.message,
           metadata: {
             functionCalls: response.functionCalls,
-            products: products?.filter(p => p && p.product_id),
+            products: products?.filter(prod => prod && prod.product_id),
+            delivery,
+            tracking,
+            order,
+            actions,
           },
           createdAt: new Date(),
         });
       } catch (error) {
         console.error("Chat error:", error);
+        const assistantId = Date.now() + 1;
+        setStreamingId(assistantId);
         addMessage({
-          id: Date.now() + 1,
+          id: assistantId,
           sessionId,
           role: "assistant",
           content:
@@ -453,7 +523,16 @@ export default function Home() {
   const handleNewChat = useCallback(() => {
     newChat();
     setState("onboarding");
+    setGenieOpen(false);
   }, [newChat, setState]);
+
+  const handleGenieComplete = useCallback(
+    (prompt: string) => {
+      setGenieOpen(false);
+      handleSend(prompt);
+    },
+    [handleSend]
+  );
 
   const historyPrompts = [
     ...new Set(messages.filter(m => m.role === "user").map(m => m.content)),
@@ -461,9 +540,12 @@ export default function Home() {
     .reverse()
     .slice(0, 12);
 
-  const theme = useChatStore(s => s.theme || "light");
+  const lastUserMessage =
+    [...messages].reverse().find(m => m.role === "user")?.content ?? "";
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const styles = themeStyles[theme] || themeStyles.light;
+  const showOnboarding = state === "onboarding" && messages.length <= 1 && !genieOpen;
 
   return (
     <div className={`h-[100dvh] w-screen overflow-hidden transition-colors duration-500 ${styles.outerBg}`}>
@@ -473,7 +555,6 @@ export default function Home() {
       <AnimatePresence>
         {mobileMenuOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -481,7 +562,6 @@ export default function Home() {
               onClick={() => setMobileMenuOpen(false)}
               className="fixed inset-0 z-50 bg-[#0f172a]/40 backdrop-blur-sm lg:hidden"
             />
-            {/* Sliding Panel */}
             <motion.div
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
@@ -489,7 +569,6 @@ export default function Home() {
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className={`fixed bottom-0 left-0 top-0 z-50 flex w-[260px] flex-col p-5 shadow-2xl backdrop-blur-2xl lg:hidden ${styles.sidebarBg}`}
             >
-              {/* Close Button & Header */}
               <div className="mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#7c3aed] to-[#0ea5e9]">
@@ -510,7 +589,6 @@ export default function Home() {
                 </button>
               </div>
 
-              {/* Sidebar Content */}
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
@@ -519,7 +597,7 @@ export default function Home() {
                 className="mb-4 flex w-full items-center gap-2 rounded-2xl bg-gradient-to-r from-[#2563eb] to-[#6d5dfc] px-3 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/20 hover:shadow-lg"
               >
                 <MessageSquarePlus className="h-4 w-4" />
-                New chat
+                {t("sidebar.newChat")}
               </button>
 
               <nav className="space-y-1">
@@ -542,13 +620,12 @@ export default function Home() {
                 <div className="mb-4 flex h-8 w-8 items-center justify-center rounded-2xl bg-white/20">
                   <Sparkles className="h-4 w-4" />
                 </div>
-                <p className="text-xs font-bold">Live Kapruka catalog</p>
+                <p className="text-xs font-bold">{t("sidebar.liveTitle")}</p>
                 <p className="mt-1 text-[10px] leading-relaxed text-white/80">
-                  Real products, real delivery quotes, real guest checkout.
+                  {t("sidebar.liveSub")}
                 </p>
               </div>
 
-              {/* Mobile User Profile */}
               <div className={`mt-auto flex items-center justify-between rounded-2xl border p-2.5 backdrop-blur-md transition-colors ${
                 theme === 'midnight' ? 'border-white/10 bg-slate-950/45 text-white' : 'border-blue-100 bg-[#f3f7ff] text-[#10133f]'
               }`}>
@@ -557,7 +634,7 @@ export default function Home() {
                     {user?.name ? user.name[0] : "G"}
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-xs font-bold leading-none">{user?.name || "Guest"}</p>
+                    <p className="truncate text-xs font-bold leading-none">{user?.name || t("sidebar.guest")}</p>
                     <p className={`truncate text-[9px] mt-0.5 ${theme === 'midnight' ? 'text-slate-400' : 'text-[#6870a7]'}`}>{user?.email || "guest@kapruka.com"}</p>
                   </div>
                 </div>
@@ -566,7 +643,7 @@ export default function Home() {
                     setMobileMenuOpen(false);
                     logout();
                   }}
-                  title="Log out"
+                  title={t("sidebar.logout")}
                   className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl transition-colors ${
                     theme === 'midnight' ? 'hover:bg-white/10 text-slate-400 hover:text-red-400' : 'hover:bg-blue-100 text-slate-600 hover:text-red-500'
                   }`}
@@ -591,6 +668,7 @@ export default function Home() {
           >
             <div className={`flex h-full w-full max-w-[1360px] overflow-hidden shadow-2xl shadow-[#283b82]/20 backdrop-blur-2xl sm:h-[calc(100dvh-2.5rem)] sm:rounded-[32px] sm:border transition-colors duration-500 ${styles.cardBg}`}>
               <LeftSidebar
+                navItems={navItems}
                 onSendMessage={handleSend}
                 onNewChat={handleNewChat}
                 styles={styles}
@@ -608,49 +686,57 @@ export default function Home() {
 
                 <div className="flex-1 space-y-4 overflow-y-auto px-3 py-5 sm:px-8 lg:px-10">
                   {messages.map((msg, index) => (
-                    <div key={msg.id} className="space-y-4">
-                      <ChatBubble message={msg} index={index} />
-                      {msg.metadata?.products &&
-                        msg.metadata.products.length > 0 && (
-                          <ProductCarousel
-                            products={msg.metadata.products}
-                            onAddToCart={handleAddToCart}
-                          />
-                        )}
+                    <div key={msg.id} className="space-y-2">
+                      <ChatBubble
+                        message={msg}
+                        index={index}
+                        streaming={msg.id === streamingId}
+                        onStreamDone={() => {
+                          setStreamingId(null);
+                          scrollToBottom();
+                        }}
+                        onTick={scrollToBottom}
+                      />
+                      {msg.metadata?.products && msg.metadata.products.length > 0 && (
+                        <ProductCarousel
+                          products={msg.metadata.products}
+                          onAddToCart={handleAddToCart}
+                        />
+                      )}
+                      {msg.metadata?.delivery && (
+                        <div className="flex justify-start pl-11">
+                          <DeliveryCard delivery={msg.metadata.delivery} />
+                        </div>
+                      )}
+                      {msg.metadata?.tracking && (
+                        <div className="flex justify-start pl-11">
+                          <OrderTrackingCard tracking={msg.metadata.tracking} />
+                        </div>
+                      )}
+                      {msg.metadata?.order && (
+                        <div className="flex justify-start pl-11">
+                          <OrderConfirmationCard order={msg.metadata.order} />
+                        </div>
+                      )}
                     </div>
                   ))}
 
-                  {state === "onboarding" && messages.length <= 1 && (
-                    <OnboardingCards onSendMessage={handleSend} />
+                  {showOnboarding && (
+                    <div className="space-y-5">
+                      <OnboardingCards onSendMessage={handleSend} onOpenGenie={() => setGenieOpen(true)} />
+                      <FestivalChips onSend={handleSend} />
+                    </div>
                   )}
+
+                  <AnimatePresence>
+                    {genieOpen && (
+                      <GiftGenie onComplete={handleGenieComplete} onCancel={() => setGenieOpen(false)} />
+                    )}
+                  </AnimatePresence>
 
                   {state === "checkout" && <CheckoutForm />}
 
-                  {isLoading && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex justify-start"
-                    >
-                      <div className={`flex items-center gap-2 rounded-2xl border px-4 py-3 shadow-sm backdrop-blur-sm ${
-                        theme === 'midnight' ? 'border-white/10 bg-slate-900/80 text-slate-300' : 'border-white/60 bg-white/80 text-[#6870a7]'
-                      }`}>
-                        <div className="flex gap-1">
-                          {[0, 0.15, 0.3].map((delay, i) => (
-                            <motion.div
-                              key={i}
-                              animate={{ y: [0, -6, 0] }}
-                              transition={{ repeat: Infinity, duration: 0.6, delay }}
-                              className="h-2 w-2 rounded-full bg-[#2563eb]"
-                            />
-                          ))}
-                        </div>
-                        <span className="ml-1 text-xs">
-                          Kiki is thinking…
-                        </span>
-                      </div>
-                    </motion.div>
-                  )}
+                  {isLoading && <ThinkingIndicator lastUserMessage={lastUserMessage} />}
 
                   <div ref={chatEndRef} />
                 </div>

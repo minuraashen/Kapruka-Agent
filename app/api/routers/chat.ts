@@ -5,10 +5,10 @@ import {
   extractMarkdown,
   parseSearchResults,
   parseProductDetail,
+  parseOrderResult,
+  parseDeliveryResult,
+  parseTrackingResult,
 } from "../lib/kapruka-parse";
-import { getDb } from "../queries/connection";
-import { chatMessages, chatSessions, orders } from "@db/schema";
-import { eq, desc } from "drizzle-orm";
 import OpenAI from "openai";
 import { env } from "../lib/env";
 
@@ -199,7 +199,7 @@ const TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
   },
 ];
 
-const SYSTEM_PROMPT = `You are Kiki, a warm, witty, and helpful AI shopping assistant for Kapruka — Sri Lanka's largest e-commerce platform. You help customers discover products, send gifts, and complete purchases. Today's date is ${new Date().toISOString().slice(0, 10)}.
+const BASE_SYSTEM_PROMPT = `You are Kiki, a warm, witty, and helpful AI shopping assistant for Kapruka — Sri Lanka's largest e-commerce platform. You help customers discover products, send gifts, and complete purchases. Today's date is ${new Date().toISOString().slice(0, 10)}.
 
 Your personality:
 - Friendly and warm like a helpful friend ("aiya/akki" energy, never pushy)
@@ -214,102 +214,87 @@ Language:
 
 Guidelines:
 - The product search results you receive already render as beautiful visual cards in the UI, so DON'T re-list every product as text. Instead, briefly introduce them ("Here are a few lovely options 🍫") and add a helpful opinion or recommendation about the top pick.
-- Guide users step by step toward checkout. Help them go from "I'm not sure" to "add to cart".
-- Before creating an order, you MUST collect: recipient name, address, city, phone, delivery date, plus sender name and email. Confirm the order summary before calling kapruka_create_order.
+- When the customer is undecided, help them compare: contrast 2–3 options on price, occasion-fit, or wow-factor and confidently recommend one. Guide them from "I'm not sure" to "add to cart".
+- The customer has a live cart in the UI (shown to you below when non-empty). When they say things like "checkout", "buy these", or "order what's in my cart", use exactly those cart items — do not invent products or ask them to re-list what they already added.
+- Before creating an order, you MUST collect: recipient name, address, city, phone, delivery date, plus sender name and email.
+- You MUST call kapruka_check_delivery for the recipient's city and chosen delivery date (passing product_id for cakes/flowers) and confirm delivery is available BEFORE calling kapruka_create_order. If delivery isn't available, suggest an alternative date or city.
+- Always confirm a short order summary (items, recipient, city, date, total) before calling kapruka_create_order.
 - Proactively offer to add a gift message for gift orders.
 - Default currency is LKR (Sri Lankan Rupees). Always format prices like "LKR 6,850".
-- When checking delivery for cakes/flowers, pass the product_id so perishable rules apply.
 - If you're unsure what someone wants, ask one focused question rather than guessing.
 
 Keep responses concise but warm. Use a few tasteful emojis. Don't be overly formal, and never dump raw JSON or IDs at the customer.`;
 
-// Best-effort: record the order the agent created so we have a local history.
-async function persistOrder(
-  sessionId: string,
-  args: Record<string, unknown>,
-  rawResult: unknown
-) {
-  try {
-    const text = extractMarkdown(rawResult);
-    const payUrl =
-      text.match(/(https?:\/\/\S*(?:pay|checkout|order)\S*)/i)?.[1] ?? null;
-    const orderNumber =
-      text.match(/order[^\w]*(?:number|#|id)[:\s]*([A-Z0-9-]{4,})/i)?.[1] ??
-      null;
-    const recipient = (args.recipient ?? {}) as Record<string, string>;
-    const delivery = (args.delivery ?? {}) as Record<string, string>;
+function buildSystemPrompt(
+  language: "en" | "si",
+  cart: Array<{ product_id: string; name: string; price: number; quantity: number }>
+): string {
+  let prompt = BASE_SYSTEM_PROMPT;
 
-    await getDb()
-      .insert(orders)
-      .values({
-        sessionId,
-        kaprukaOrderNumber: orderNumber,
-        payUrl,
-        status: payUrl ? "awaiting_payment" : "pending",
-        currency: (args.currency as string) ?? "LKR",
-        recipientName: recipient.name ?? null,
-        recipientAddress: recipient.address ?? null,
-        recipientCity: recipient.city ?? null,
-        deliveryDate: delivery.date ?? null,
-        giftMessage: (args.gift_message as string) ?? null,
-        items: args.cart ?? [],
-      });
-  } catch (error) {
-    console.error("[orders] Failed to persist order:", error);
+  if (language === "si") {
+    prompt +=
+      "\n\nThe customer's interface is currently set to Sinhala (සිංහල). Prefer replying in clear, friendly, everyday Sinhala unless they explicitly write to you in English.";
   }
+
+  if (cart.length > 0) {
+    const lines = cart
+      .map(
+        (item) =>
+          `- ${item.name} (ID: ${item.product_id}) × ${item.quantity} — LKR ${(
+            item.price * item.quantity
+          ).toLocaleString()}`
+      )
+      .join("\n");
+    const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    prompt += `\n\nThe customer's CURRENT CART (from the UI) contains:\n${lines}\nCart total: LKR ${total.toLocaleString()}\nIf they want to check out, use exactly these items.`;
+  }
+
+  return prompt;
 }
 
 export const chatRouter = createRouter({
+  // Stateless: the client sends the recent conversation history, the live cart,
+  // and the UI language with every message. No database is involved.
   sendMessage: publicQuery
     .input(
       z.object({
-        sessionId: z.string(),
-        message: z.string(),
+        messages: z
+          .array(
+            z.object({
+              role: z.enum(["user", "assistant"]),
+              content: z.string(),
+            })
+          )
+          .default([]),
+        cart: z
+          .array(
+            z.object({
+              product_id: z.string(),
+              name: z.string(),
+              price: z.number(),
+              quantity: z.number(),
+            })
+          )
+          .default([]),
+        language: z.enum(["en", "si"]).default("en"),
       })
     )
     .mutation(async ({ input }) => {
-      const db = getDb();
       const openrouter = getLlmClient();
 
-      // Ensure session exists
-      const existingSession = await db
-        .select()
-        .from(chatSessions)
-        .where(eq(chatSessions.sessionId, input.sessionId));
-
-      if (existingSession.length === 0) {
-        await db.insert(chatSessions).values({
-          sessionId: input.sessionId,
-          state: "onboarding",
-        });
-      }
-
-      // Store user message
-      await db.insert(chatMessages).values({
-        sessionId: input.sessionId,
-        role: "user",
-        content: input.message,
-      });
-
-      // Get recent messages for context
-      const recentMessages = await db
-        .select()
-        .from(chatMessages)
-        .where(eq(chatMessages.sessionId, input.sessionId))
-        .orderBy(desc(chatMessages.createdAt))
-        .limit(20);
+      // Keep the prompt bounded — only the most recent turns matter.
+      const history = input.messages.slice(-16);
 
       const messagesForAI: OpenAI.Chat.ChatCompletionMessageParam[] = [
-        { role: "system", content: SYSTEM_PROMPT },
-        ...recentMessages.reverse().map((m) => ({
+        { role: "system", content: buildSystemPrompt(input.language, input.cart) },
+        ...history.map((m) => ({
           role: m.role as "user" | "assistant",
           content: m.content,
         })),
       ];
 
-      // Call OpenRouter with OpenAI-compatible function calling.
       let assistantContent = "";
-      let functionCalls: Array<{
+      const functionCalls: Array<{
         name: string;
         arguments: Record<string, unknown>;
         result?: unknown;
@@ -358,7 +343,6 @@ export const chatRouter = createRouter({
         }
 
         if (message.tool_calls && message.tool_calls.length > 0) {
-          // Add assistant's tool call request to messages
           const toolCalls = message.tool_calls as Array<{
             id: string;
             type: string;
@@ -377,10 +361,14 @@ export const chatRouter = createRouter({
             })),
           });
 
-          // Execute each tool call
           for (const toolCall of toolCalls) {
             const functionName = toolCall.function.name;
-            const functionArgs = JSON.parse(toolCall.function.arguments);
+            let functionArgs: Record<string, unknown> = {};
+            try {
+              functionArgs = JSON.parse(toolCall.function.arguments || "{}");
+            } catch {
+              functionArgs = {};
+            }
 
             try {
               const rawResult = await callKaprukaTool(
@@ -389,11 +377,11 @@ export const chatRouter = createRouter({
                 functionName !== "kapruka_create_order"
               );
 
-              // The MCP returns Markdown. For product tools we parse it into
-              // structured data (with images) so the UI can render rich cards,
-              // while still handing the readable text to the model.
+              // The MCP returns Markdown. We parse it into structured data so
+              // the UI can render rich cards, while still handing readable text
+              // to the model.
               let result: unknown = rawResult;
-              let modelContent = JSON.stringify(rawResult);
+              let modelContent = extractMarkdown(rawResult);
 
               if (functionName === "kapruka_search_products") {
                 const markdown = extractMarkdown(rawResult);
@@ -407,11 +395,18 @@ export const chatRouter = createRouter({
                 const product = parseProductDetail(markdown);
                 result = { product, summary: markdown };
                 modelContent = markdown;
+              } else if (functionName === "kapruka_check_delivery") {
+                const delivery = parseDeliveryResult(rawResult);
+                result = { delivery };
+                modelContent = delivery.raw;
+              } else if (functionName === "kapruka_track_order") {
+                const tracking = parseTrackingResult(rawResult);
+                result = { tracking };
+                modelContent = tracking.raw;
               } else if (functionName === "kapruka_create_order") {
-                await persistOrder(input.sessionId, functionArgs, rawResult);
-                modelContent = extractMarkdown(rawResult);
-              } else {
-                modelContent = extractMarkdown(rawResult);
+                const order = parseOrderResult(rawResult);
+                result = { order };
+                modelContent = order.raw;
               }
 
               functionCalls.push({
@@ -420,7 +415,6 @@ export const chatRouter = createRouter({
                 result,
               });
 
-              // Add tool result to messages
               messagesForAI.push({
                 role: "tool",
                 tool_call_id: toolCall.id,
@@ -437,73 +431,15 @@ export const chatRouter = createRouter({
             }
           }
 
-          // Continue loop to let AI process tool results
           continue;
         }
 
-        // No tool calls, we're done
         break;
       }
-
-      // Store assistant message
-      const metadata = functionCalls.length > 0 ? { functionCalls } : undefined;
-      await db.insert(chatMessages).values({
-        sessionId: input.sessionId,
-        role: "assistant",
-        content: assistantContent || "Let me help you with that!",
-        metadata,
-      });
 
       return {
         message: assistantContent || "Let me help you with that!",
         functionCalls: functionCalls.length > 0 ? functionCalls : undefined,
       };
-    }),
-
-  getHistory: publicQuery
-    .input(z.object({ sessionId: z.string() }))
-    .query(async ({ input }) => {
-      const db = getDb();
-      const messages = await db
-        .select()
-        .from(chatMessages)
-        .where(eq(chatMessages.sessionId, input.sessionId))
-        .orderBy(chatMessages.createdAt);
-
-      return messages;
-    }),
-
-  getSession: publicQuery
-    .input(z.object({ sessionId: z.string() }))
-    .query(async ({ input }) => {
-      const db = getDb();
-      const sessions = await db
-        .select()
-        .from(chatSessions)
-        .where(eq(chatSessions.sessionId, input.sessionId));
-
-      return sessions[0] || null;
-    }),
-
-  updateSessionState: publicQuery
-    .input(
-      z.object({
-        sessionId: z.string(),
-        state: z.string(),
-        intent: z.string().optional(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const db = getDb();
-      await db
-        .update(chatSessions)
-        .set({
-          state: input.state,
-          intent: input.intent,
-          updatedAt: new Date(),
-        })
-        .where(eq(chatSessions.sessionId, input.sessionId));
-
-      return { success: true };
     }),
 });

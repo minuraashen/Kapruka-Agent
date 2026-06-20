@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "../middleware";
 import { callKaprukaTool } from "../lib/mcp-client";
+import {
+  parseOrderResult,
+  parseDeliveryResult,
+  parseTrackingResult,
+} from "../lib/kapruka-parse";
 
 export const kaprukaRouter = createRouter({
   searchProducts: publicQuery
@@ -53,7 +58,8 @@ export const kaprukaRouter = createRouter({
       })
     )
     .mutation(async ({ input }) => {
-      return callKaprukaTool("kapruka_check_delivery", input);
+      const raw = await callKaprukaTool("kapruka_check_delivery", input);
+      return parseDeliveryResult(raw);
     }),
 
   createOrder: publicQuery
@@ -86,12 +92,16 @@ export const kaprukaRouter = createRouter({
       })
     )
     .mutation(async ({ input }) => {
-      return callKaprukaTool("kapruka_create_order", input, false);
+      const raw = await callKaprukaTool("kapruka_create_order", input, false);
+      // The MCP returns Markdown; parse it into { payUrl, orderNumber } so the
+      // checkout form can render the success state and Pay Now link reliably.
+      return parseOrderResult(raw);
     }),
 
   trackOrder: publicQuery
     .input(z.object({ order_number: z.string() }))
     .query(async ({ input }) => {
-      return callKaprukaTool("kapruka_track_order", input);
+      const raw = await callKaprukaTool("kapruka_track_order", input);
+      return parseTrackingResult(raw);
     }),
 });

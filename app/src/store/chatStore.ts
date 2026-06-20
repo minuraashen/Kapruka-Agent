@@ -26,6 +26,28 @@ export interface Product {
   vendor?: string;
 }
 
+export interface DeliveryInfo {
+  available: boolean;
+  city?: string;
+  date?: string;
+  fee?: number;
+  currency?: string;
+  note?: string;
+}
+
+export interface TrackingInfo {
+  orderNumber?: string;
+  status?: string;
+  steps?: Array<{ label: string; done: boolean }>;
+}
+
+export interface OrderInfo {
+  orderNumber?: string;
+  payUrl?: string;
+  total?: number;
+  currency?: string;
+}
+
 export interface ChatMessage {
   id: number;
   sessionId: string;
@@ -39,6 +61,12 @@ export interface ChatMessage {
     }>;
     // Products parsed from a search result, rendered inline as cards.
     products?: Product[];
+    // Rich results parsed from tool calls, rendered as visual cards.
+    delivery?: DeliveryInfo;
+    tracking?: TrackingInfo;
+    order?: OrderInfo;
+    // Names of tools the agent actually used, for "actions taken" chips.
+    actions?: string[];
   };
   createdAt: Date;
 }
@@ -83,6 +111,10 @@ interface ChatStore {
   // Theme switcher
   theme: "light" | "midnight" | "sunset";
   setTheme: (theme: "light" | "midnight" | "sunset") => void;
+
+  // UI language (full chrome localization + agent language hint)
+  language: "en" | "si";
+  setLanguage: (language: "en" | "si") => void;
 
   // Authentication
   user: { name: string; email: string } | null;
@@ -154,6 +186,9 @@ export const useChatStore = create<ChatStore>()(
       theme: "light",
       setTheme: (theme) => set({ theme }),
 
+      language: "en",
+      setLanguage: (language) => set({ language }),
+
       user: null,
       login: (user) => set({ user }),
       logout: () =>
@@ -172,9 +207,13 @@ export const useChatStore = create<ChatStore>()(
       partialize: (state) => ({
         sessionId: state.sessionId,
         state: state.state,
+        // Persist the visible conversation so a refresh doesn't wipe the chat
+        // while the agent (which receives history from the client) "remembers".
+        messages: state.messages,
         cart: state.cart,
         intent: state.intent,
         theme: state.theme,
+        language: state.language,
         user: state.user,
       }),
     }

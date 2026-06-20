@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Plus, ExternalLink, ImageOff, Check } from "lucide-react";
 import { useChatStore } from "@/store/chatStore";
 import type { Product } from "@/store/chatStore";
+import { useT } from "@/lib/i18n";
 
 interface Props {
   product: Product;
@@ -18,6 +19,7 @@ export default function ProductCard({ product, index, onAddToCart }: Props) {
   const inStock = product.in_stock !== false;
 
   const theme = useChatStore(s => s.theme || "light");
+  const { t: tr } = useT();
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const inCart = useChatStore(s =>
@@ -92,16 +94,16 @@ export default function ProductCard({ product, index, onAddToCart }: Props) {
         ) : null}
         <div
           data-fallback
-          className={`absolute inset-0 flex flex-col items-center justify-center gap-1 text-[#2563eb]/40 ${
-            image ? "hidden" : ""
-          }`}
+          className={`absolute inset-0 flex flex-col items-center justify-center gap-1 ${
+            theme === "midnight" ? "text-slate-500" : "text-slate-400"
+          } ${image ? "hidden" : ""}`}
         >
           <ImageOff className="h-9 w-9" />
-          <span className="text-[10px] font-medium">No preview</span>
+          <span className="text-[10px] font-medium">{tr("cart.noPreview")}</span>
         </div>
 
         {product.category && (
-          <span className="absolute left-2 top-2 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-semibold capitalize text-[#2563eb] shadow-sm backdrop-blur">
+          <span className={`absolute left-2 top-2 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-semibold capitalize shadow-sm backdrop-blur ${t.price}`}>
             {product.category}
           </span>
         )}
@@ -109,7 +111,7 @@ export default function ProductCard({ product, index, onAddToCart }: Props) {
         {!inStock && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/40">
             <span className="rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white">
-              Out of Stock
+              {tr("cart.outOfStock")}
             </span>
           </div>
         )}
@@ -151,12 +153,12 @@ export default function ProductCard({ product, index, onAddToCart }: Props) {
             {inCart ? (
               <>
                 <Check className="h-4 w-4" />
-                Added
+                {tr("cart.added")}
               </>
             ) : (
               <>
                 <Plus className="h-4 w-4" />
-                Add
+                {tr("cart.add")}
               </>
             )}
           </motion.button>

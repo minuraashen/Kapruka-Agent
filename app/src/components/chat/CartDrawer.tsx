@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useChatStore } from "@/store/chatStore";
+import { useT } from "@/lib/i18n";
 import { themeStyles } from "@/pages/Home";
 
 interface Props {
@@ -13,6 +14,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
   const removeFromCart = useChatStore(s => s.removeFromCart);
   const setCart = useChatStore(s => s.setCart);
   const theme = useChatStore(s => s.theme || "light");
+  const { t } = useT();
 
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const styles = themeStyles[theme] || themeStyles.light;
@@ -59,10 +61,10 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                   className={`text-lg font-bold`}
                   style={{ fontFamily: "Quicksand, sans-serif" }}
                 >
-                  Your Cart
+                  {t("cart.title")}
                 </h2>
                 <span className={`text-sm ${theme === 'midnight' ? 'text-slate-400' : 'text-[#6870a7]'}`}>
-                  ({cart.length} items)
+                  ({t("cart.items", { n: cart.length })})
                 </span>
               </div>
               <button
@@ -82,9 +84,9 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                   theme === 'midnight' ? 'text-slate-400' : 'text-[#6870a7]'
                 }`}>
                   <ShoppingBag className="w-12 h-12 mb-3 opacity-30" />
-                  <p className="text-sm">Your cart is empty</p>
+                  <p className="text-sm">{t("cart.empty")}</p>
                   <p className="text-xs mt-1">
-                    Add items from the product carousel!
+                    {t("cart.emptyHint")}
                   </p>
                 </div>
               ) : (
@@ -154,7 +156,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                 theme === 'midnight' ? 'border-white/10 bg-slate-900/40' : 'border-blue-100/70 bg-white/60'
               }`}>
                 <div className="flex items-center justify-between mb-4">
-                  <span className={`text-sm ${theme === 'midnight' ? 'text-slate-400' : 'text-[#6870a7]'}`}>Total</span>
+                  <span className={`text-sm ${theme === 'midnight' ? 'text-slate-400' : 'text-[#6870a7]'}`}>{t("cart.total")}</span>
                   <span
                     className="text-xl font-bold"
                     style={{ fontFamily: "Quicksand, sans-serif" }}
@@ -171,7 +173,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                   }}
                   className="w-full rounded-2xl bg-gradient-to-r from-[#6d5dfc] to-[#1992ff] py-3.5 font-semibold text-white shadow-lg shadow-blue-500/25 transition-shadow hover:shadow-xl"
                 >
-                  Proceed to Checkout
+                  {t("cart.checkout")}
                 </motion.button>
               </div>
             )}
