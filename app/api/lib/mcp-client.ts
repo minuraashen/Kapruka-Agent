@@ -170,7 +170,7 @@ export async function callKaprukaTool(
  */
 export async function enrichProductsWithImages(
   products: ParsedProduct[],
-  max = 6
+  max = 12
 ): Promise<ParsedProduct[]> {
   const enrichable = products.slice(0, max);
 
