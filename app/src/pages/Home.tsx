@@ -223,6 +223,7 @@ export default function Home() {
 
   const [cartOpen, setCartOpen] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const greetingAddedRef = useRef<string | null>(null);
 
   const sendMessageMutation = trpc.chat.sendMessage.useMutation();
 
@@ -233,7 +234,12 @@ export default function Home() {
 
   // Initial greeting
   useEffect(() => {
-    if (state !== "splash" && messages.length === 0) {
+    if (
+      state !== "splash" &&
+      messages.length === 0 &&
+      greetingAddedRef.current !== sessionId
+    ) {
+      greetingAddedRef.current = sessionId;
       addMessage({
         id: Date.now(),
         sessionId,
@@ -243,8 +249,7 @@ export default function Home() {
         createdAt: new Date(),
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state]);
+  }, [state, sessionId, messages.length, addMessage]);
 
   const handleSend = useCallback(
     async (overrideText?: string) => {
