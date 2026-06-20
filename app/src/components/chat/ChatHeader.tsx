@@ -47,7 +47,7 @@ export default function ChatHeader({ onNewChat, onOpenCart, onOpenMenu }: Props)
           <Menu className="h-4 w-4" />
         </button>
 
-        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#7c3aed] to-[#0ea5e9] shadow-lg shadow-blue-500/20">
+        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#482880] to-[#facc15]/60 shadow-lg shadow-purple-500/20">
           <img
             src="/kiki-avatar.png"
             alt="Kiki"
@@ -56,12 +56,17 @@ export default function ChatHeader({ onNewChat, onOpenCart, onOpenMenu }: Props)
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <h1
-              className={`text-base font-bold sm:text-lg transition-colors ${styles.headerTitle}`}
+            <img 
+              src="/kapruka-logo.png" 
+              alt="Kapruka Logo" 
+              className="h-5 w-auto object-contain rounded"
+            />
+            <span 
+              className={`text-sm font-bold sm:text-base transition-colors ${styles.headerTitle}`}
               style={{ fontFamily: "Quicksand, sans-serif" }}
             >
-              Kapruka Kiki
-            </h1>
+              Kiki
+            </span>
             <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold text-emerald-600">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Online
@@ -139,13 +144,13 @@ export default function ChatHeader({ onNewChat, onOpenCart, onOpenMenu }: Props)
 
         <motion.button
           onClick={onOpenCart}
-          animate={isBouncing ? { scale: [1, 1.25, 0.95, 1], rotate: [0, -8, 8, 0], boxShadow: "0 0 15px rgba(37,99,235,0.4)" } : {}}
+          animate={isBouncing ? { scale: [1, 1.25, 0.95, 1], rotate: [0, -8, 8, 0], boxShadow: "0 0 15px rgba(72,40,128,0.4)" } : {}}
           transition={{ duration: 0.45 }}
-          className={`relative flex h-10 items-center gap-2 rounded-2xl shadow-sm transition-all duration-300 ${styles.cartBtn}`}
+          className={`relative flex h-10 items-center gap-2 rounded-2xl shadow-sm transition-all duration-300 px-3 ${styles.cartBtn}`}
         >
-          <ShoppingCart className="h-4 w-4 text-[#2563eb]" />
+          <ShoppingCart className="h-4 w-4" />
           {cartCount > 0 && (
-            <span className="text-sm font-semibold text-[#2563eb]">
+            <span className="text-sm font-semibold">
               {cartCount}
             </span>
           )}

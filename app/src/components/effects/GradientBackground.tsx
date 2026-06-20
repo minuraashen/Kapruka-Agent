@@ -109,22 +109,22 @@ import { useChatStore } from "@/store/chatStore";
 
 const THEME_COLORS = {
   light: [
-    [0.79, 0.83, 1.0],
-    [0.58, 0.46, 0.94],
-    [0.25, 0.55, 0.96],
-    [0.80, 0.66, 1.0],
+    [0.85, 0.82, 0.91], // Light Lavender
+    [0.28, 0.16, 0.50], // Kapruka Purple
+    [0.98, 0.80, 0.08], // Kapruka Yellow
+    [0.91, 0.84, 0.93], // Soft Pink/Plum
   ],
   midnight: [
-    [0.05, 0.05, 0.15],
-    [0.10, 0.05, 0.22],
-    [0.03, 0.12, 0.28],
-    [0.12, 0.06, 0.18],
+    [0.07, 0.04, 0.12], // Deep space purple
+    [0.11, 0.05, 0.22], // Midnight violet
+    [0.17, 0.07, 0.34], // Kapruka Purple (deepened)
+    [0.70, 0.57, 0.04], // Gold/Yellow (dimmed)
   ],
   sunset: [
-    [1.0, 0.72, 0.55],
-    [0.92, 0.42, 0.52],
-    [0.58, 0.28, 0.68],
-    [1.0, 0.48, 0.62],
+    [1.0, 0.72, 0.55], // Peach
+    [0.28, 0.16, 0.50], // Kapruka Purple
+    [0.98, 0.80, 0.08], // Kapruka Yellow
+    [0.92, 0.42, 0.52], // Coral
   ],
 };
 

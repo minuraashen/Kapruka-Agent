@@ -8,8 +8,8 @@ const cards = [
     icon: Gift,
     title: "Send a Gift",
     description: "Find the perfect gift for someone special",
-    color: "from-[#6d5dfc] to-[#1992ff]",
-    shadow: "shadow-blue-500/20",
+    color: "from-[#482880] to-[#6d5dfc]",
+    shadow: "shadow-purple-500/20",
     intent: "gift_mode" as const,
     message: "I'd like to send a gift to someone!",
   },
@@ -18,8 +18,8 @@ const cards = [
     icon: ShoppingBag,
     title: "Shop for Myself",
     description: "Browse and buy products for yourself",
-    color: "from-[#0ea5e9] to-[#38bdf8]",
-    shadow: "shadow-cyan-500/20",
+    color: "from-[#6c1c96] to-[#eab308]",
+    shadow: "shadow-purple-500/20",
     intent: "shop_mode" as const,
     message: "I want to shop for something!",
   },
@@ -28,8 +28,8 @@ const cards = [
     icon: PackageSearch,
     title: "Track an Order",
     description: "Check the status of your existing order",
-    color: "from-[#7c3aed] to-[#a78bfa]",
-    shadow: "shadow-violet-500/20",
+    color: "from-[#1b0d39] to-[#482880]",
+    shadow: "shadow-purple-950/20",
     intent: "track_mode" as const,
     message: "I'd like to track my order",
   },
@@ -83,7 +83,7 @@ export default function OnboardingCards({
           whileHover={{
             scale: 1.03,
             y: -3,
-            boxShadow: "0 22px 44px rgba(37, 99, 235, 0.18)",
+            boxShadow: "0 22px 44px rgba(72, 40, 128, 0.18)",
           }}
           whileTap={{ scale: 0.98 }}
           onClick={() => handleClick(card)}

@@ -11,6 +11,7 @@ import {
   Sparkles,
   Trash2,
   X,
+  LogOut,
 } from "lucide-react";
 import { useChatStore } from "@/store/chatStore";
 import type { ChatMessage, Product } from "@/store/chatStore";
@@ -84,7 +85,7 @@ function SplashScreen({ onStart }: { onStart: () => void }) {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={onStart}
-        className="rounded-full bg-gradient-to-r from-[#6d5dfc] to-[#1992ff] px-8 py-4 text-lg font-bold text-white shadow-xl shadow-[#4f46e5]/30 transition-shadow hover:shadow-2xl mt-8"
+        className="rounded-full bg-gradient-to-r from-[#482880] to-[#6d5dfc] px-8 py-4 text-lg font-bold text-white shadow-xl shadow-purple-500/30 transition-shadow hover:shadow-2xl mt-8"
         style={{ fontFamily: "Quicksand, sans-serif" }}
       >
         <span className="flex items-center gap-2">
@@ -105,61 +106,61 @@ const navItems = [
 
 export const themeStyles = {
   light: {
-    outerBg: "bg-[#b9b8ee]",
+    outerBg: "bg-[#d8d2e8]",
     cardBg: "border-white/60 bg-white/25",
-    mainBg: "bg-gradient-to-br from-white/60 via-[#f7f7ff]/50 to-[#eaf8ff]/50",
+    mainBg: "bg-gradient-to-br from-white/60 via-[#f5f2fa]/50 to-[#e8e4f5]/50",
     sidebarBg: "border-r border-white/50 bg-white/40",
-    sidebarText: "text-[#38406f] hover:bg-white/60 hover:text-[#2563eb]",
-    sidebarTitle: "text-[#10133f]",
-    sidebarSub: "text-[#5f67a8]",
-    sparklesBg: "from-[#2563eb] via-[#6157f5] to-[#9b5cff]",
-    chatBg: "border border-white/70 bg-white/90 text-[#151a43]",
+    sidebarText: "text-[#482880] hover:bg-[#482880]/10 hover:text-[#482880]",
+    sidebarTitle: "text-[#482880]",
+    sidebarSub: "text-[#745f9e]",
+    sparklesBg: "from-[#482880] via-[#6d5dfc] to-[#eab308]",
+    chatBg: "border border-[#482880]/15 bg-white/90 text-[#1b0a33]",
     headerBg: "border-b border-white/60 bg-white/45",
-    headerTitle: "text-[#10133f]",
-    headerSub: "text-[#6870a7]",
-    newChatBtn: "bg-white/60 text-[#4f5b91] hover:bg-white",
+    headerTitle: "text-[#482880]",
+    headerSub: "text-[#745f9e]",
+    newChatBtn: "bg-[#482880]/10 text-[#482880] hover:bg-[#482880]/20",
     inputBarBg: "border-t border-white/50 bg-white/35",
-    inputBg: "border border-white/70 bg-white/85 text-[#10133f] placeholder-[#9098bd]",
-    cartBtn: "border border-white/60 bg-white/70 text-[#2563eb] hover:bg-white",
-    cartDrawerBg: "bg-white/95 text-[#10133f]",
+    inputBg: "border border-[#482880]/20 bg-white/85 text-[#1b0a33] placeholder-[#948ca6]",
+    cartBtn: "border border-[#482880]/20 bg-white/70 text-[#482880] hover:bg-white",
+    cartDrawerBg: "bg-white/95 text-[#1b0a33]",
   },
   midnight: {
-    outerBg: "bg-[#0b0c16]",
+    outerBg: "bg-[#0e0a1a]",
     cardBg: "border-white/10 bg-black/40",
-    mainBg: "bg-gradient-to-br from-black/45 via-[#10132b]/40 to-[#0b0c1e]/45",
+    mainBg: "bg-gradient-to-br from-black/45 via-[#171126]/40 to-[#0e0a1a]/45",
     sidebarBg: "border-r border-white/10 bg-black/30",
-    sidebarText: "text-slate-300 hover:bg-white/10 hover:text-white",
+    sidebarText: "text-[#d4cbef] hover:bg-[#482880]/30 hover:text-white",
     sidebarTitle: "text-white",
-    sidebarSub: "text-slate-400",
-    sparklesBg: "from-[#1e1b4b] via-[#311042] to-[#4c1d95]",
-    chatBg: "border border-white/10 bg-slate-900/90 text-slate-100",
+    sidebarSub: "text-[#a89dc7]",
+    sparklesBg: "from-[#482880] via-[#2f135b] to-[#1c073a]",
+    chatBg: "border border-white/10 bg-[#161026]/90 text-slate-100",
     headerBg: "border-b border-white/10 bg-black/30",
     headerTitle: "text-white",
-    headerSub: "text-slate-400",
+    headerSub: "text-[#a89dc7]",
     newChatBtn: "bg-white/10 text-white hover:bg-white/20",
     inputBarBg: "border-t border-white/10 bg-black/35",
-    inputBg: "border border-white/10 bg-slate-900/80 text-white placeholder-slate-400",
-    cartBtn: "border border-white/10 bg-slate-900/60 text-white hover:bg-slate-900/85",
-    cartDrawerBg: "bg-slate-950/95 text-slate-100",
+    inputBg: "border border-white/10 bg-[#110b1f]/80 text-white placeholder-[#8d82b0]",
+    cartBtn: "border border-white/10 bg-slate-900/60 text-[#eab308] hover:bg-slate-900/85",
+    cartDrawerBg: "bg-[#110a1f]/95 text-slate-100",
   },
   sunset: {
-    outerBg: "bg-[#ffded2]",
+    outerBg: "bg-[#ffece5]",
     cardBg: "border-white/60 bg-white/20",
-    mainBg: "bg-gradient-to-br from-white/50 via-[#fff8f5]/40 to-[#ffeae5]/40",
+    mainBg: "bg-gradient-to-br from-white/50 via-[#fff9f7]/40 to-[#ffeae5]/40",
     sidebarBg: "border-r border-white/40 bg-white/30",
-    sidebarText: "text-[#854d3e] hover:bg-white/50 hover:text-[#ea580c]",
-    sidebarTitle: "text-[#5c2a1c]",
-    sidebarSub: "text-[#854d3e]",
-    sparklesBg: "from-[#ea580c] via-[#ec4899] to-[#db2777]",
-    chatBg: "border border-white/70 bg-white/90 text-[#5c2a1c]",
+    sidebarText: "text-[#5c2a1c] hover:bg-[#482880]/10 hover:text-[#482880]",
+    sidebarTitle: "text-[#482880]",
+    sidebarSub: "text-[#856157]",
+    sparklesBg: "from-[#482880] via-[#ea580c] to-[#ffd200]",
+    chatBg: "border border-[#482880]/20 bg-white/90 text-[#30150d]",
     headerBg: "border-b border-white/40 bg-white/30",
-    headerTitle: "text-[#5c2a1c]",
-    headerSub: "text-[#854d3e]",
-    newChatBtn: "bg-white/50 text-[#854d3e] hover:bg-white",
+    headerTitle: "text-[#482880]",
+    headerSub: "text-[#856157]",
+    newChatBtn: "bg-white/50 text-[#482880] hover:bg-white",
     inputBarBg: "border-t border-white/40 bg-white/25",
-    inputBg: "border border-white/65 bg-white/80 text-[#5c2a1c] placeholder-[#c59a8f]",
+    inputBg: "border border-white/65 bg-white/80 text-[#30150d] placeholder-[#c5a69f]",
     cartBtn: "border border-white/40 bg-white/60 text-[#ea580c] hover:bg-white",
-    cartDrawerBg: "bg-white/95 text-[#5c2a1c]",
+    cartDrawerBg: "bg-white/95 text-[#30150d]",
   },
 };
 
@@ -167,15 +168,21 @@ function LeftSidebar({
   onSendMessage,
   onNewChat,
   styles,
+  user,
+  logout,
+  theme,
 }: {
   onSendMessage: (message: string) => void;
   onNewChat: () => void;
   styles: typeof themeStyles.light;
+  user: { name: string; email: string } | null;
+  logout: () => void;
+  theme: string;
 }) {
   return (
     <aside className={`hidden w-[200px] shrink-0 flex-col border-r px-4 py-5 backdrop-blur-2xl lg:flex ${styles.sidebarBg}`}>
       <div className="mb-7 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#7c3aed] to-[#0ea5e9] shadow-lg shadow-blue-500/20">
+        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#482880] to-[#facc15]/60 shadow-lg shadow-purple-500/20">
           <img src="/kiki-avatar.png" alt="Kiki" className="h-full w-full object-cover" />
         </div>
         <div>
@@ -191,13 +198,13 @@ function LeftSidebar({
 
       <button
         onClick={onNewChat}
-        className="mb-4 flex w-full items-center gap-2 rounded-2xl bg-gradient-to-r from-[#2563eb] to-[#6d5dfc] px-3 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/20 transition-shadow hover:shadow-lg"
+        className="mb-4 flex w-full items-center gap-2 rounded-2xl bg-gradient-to-r from-[#482880] to-[#6d5dfc] px-3 py-2.5 text-sm font-semibold text-white shadow-md shadow-purple-500/20 transition-shadow hover:shadow-lg"
       >
         <MessageSquarePlus className="h-4 w-4" />
         New chat
       </button>
 
-      <nav className="space-y-1">
+      <nav className="mb-4 space-y-1">
         {navItems.map(item => (
           <button
             key={item.label}
@@ -210,15 +217,38 @@ function LeftSidebar({
         ))}
       </nav>
 
-      <div className={`mt-auto rounded-[24px] bg-gradient-to-br ${styles.sparklesBg} p-4 text-white shadow-xl shadow-blue-500/20`}>
-        <div className="mb-6 flex h-9 w-9 items-center justify-center rounded-2xl bg-white/20">
+      <div className={`rounded-[24px] bg-gradient-to-br ${styles.sparklesBg} p-4 text-white shadow-xl shadow-purple-500/20`}>
+        <div className="mb-4 flex h-8 w-8 items-center justify-center rounded-2xl bg-white/20">
           <Sparkles className="h-4 w-4" />
         </div>
-        <p className="text-sm font-bold">Live Kapruka catalog</p>
-        <p className="mt-1 text-xs leading-relaxed text-white/80">
-          Real products, real delivery quotes, real guest checkout — powered by
-          the Kapruka MCP.
+        <p className="text-xs font-bold">Live Kapruka catalog</p>
+        <p className="mt-1 text-[10px] leading-relaxed text-white/80">
+          Real products, real delivery quotes, real guest checkout.
         </p>
+      </div>
+
+      {/* User Profile */}
+      <div className={`mt-auto flex items-center justify-between rounded-2xl border p-2.5 backdrop-blur-md transition-colors ${
+        theme === 'midnight' ? 'border-white/10 bg-slate-950/45 text-white' : 'border-purple-100 bg-[#f6f2ff] text-[#10133f]'
+      }`}>
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#482880] to-[#6d5dfc] text-xs font-bold text-white uppercase">
+            {user?.name ? user.name[0] : "G"}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-xs font-bold leading-none">{user?.name || "Guest"}</p>
+            <p className={`truncate text-[9px] mt-0.5 ${theme === 'midnight' ? 'text-slate-400' : 'text-[#745f9e]'}`}>{user?.email || "guest@kapruka.com"}</p>
+          </div>
+        </div>
+        <button
+          onClick={logout}
+          title="Log out"
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl transition-colors ${
+            theme === 'midnight' ? 'hover:bg-white/10 text-slate-400 hover:text-red-400' : 'hover:bg-purple-100 text-slate-600 hover:text-red-500'
+          }`}
+        >
+          <LogOut className="h-3.5 w-3.5" />
+        </button>
       </div>
     </aside>
   );
@@ -298,6 +328,8 @@ export default function Home() {
   const addToCart = useChatStore(s => s.addToCart);
   const isLoading = useChatStore(s => s.isLoading);
   const newChat = useChatStore(s => s.newChat);
+  const user = useChatStore(s => s.user);
+  const logout = useChatStore(s => s.logout);
 
   const [cartOpen, setCartOpen] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -322,12 +354,11 @@ export default function Home() {
         id: Date.now(),
         sessionId,
         role: "assistant",
-        content:
-          "Ayubowan! 🙏 I'm **Kiki**, your shopping buddy for Kapruka. I can find gifts, cakes, flowers and more — quote delivery anywhere in Sri Lanka, and take you all the way to checkout. What are we shopping for today?",
+        content: `Ayubowan, ${user?.name || "there"}! 🙏 I'm **Kiki**, your shopping buddy for Kapruka. I can find gifts, cakes, flowers and more — quote delivery anywhere in Sri Lanka, and take you all the way to checkout. What are we shopping for today?`,
         createdAt: new Date(),
       });
     }
-  }, [state, sessionId, messages.length, addMessage]);
+  }, [state, sessionId, messages.length, addMessage, user?.name]);
 
   const handleSend = useCallback(
     async (overrideText?: string) => {
@@ -507,14 +538,41 @@ export default function Home() {
                 ))}
               </nav>
 
-              <div className={`mt-auto rounded-[24px] bg-gradient-to-br ${styles.sparklesBg} p-4 text-white shadow-xl shadow-blue-500/20`}>
+              <div className={`mt-4 rounded-[24px] bg-gradient-to-br ${styles.sparklesBg} p-4 text-white shadow-xl shadow-blue-500/20`}>
                 <div className="mb-4 flex h-8 w-8 items-center justify-center rounded-2xl bg-white/20">
                   <Sparkles className="h-4 w-4" />
                 </div>
                 <p className="text-xs font-bold">Live Kapruka catalog</p>
                 <p className="mt-1 text-[10px] leading-relaxed text-white/80">
-                  Real products, real delivery quotes, real guest checkout — powered by the Kapruka MCP.
+                  Real products, real delivery quotes, real guest checkout.
                 </p>
+              </div>
+
+              {/* Mobile User Profile */}
+              <div className={`mt-auto flex items-center justify-between rounded-2xl border p-2.5 backdrop-blur-md transition-colors ${
+                theme === 'midnight' ? 'border-white/10 bg-slate-950/45 text-white' : 'border-blue-100 bg-[#f3f7ff] text-[#10133f]'
+              }`}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#2563eb] to-[#6d5dfc] text-xs font-bold text-white uppercase">
+                    {user?.name ? user.name[0] : "G"}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-bold leading-none">{user?.name || "Guest"}</p>
+                    <p className={`truncate text-[9px] mt-0.5 ${theme === 'midnight' ? 'text-slate-400' : 'text-[#6870a7]'}`}>{user?.email || "guest@kapruka.com"}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    logout();
+                  }}
+                  title="Log out"
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                    theme === 'midnight' ? 'hover:bg-white/10 text-slate-400 hover:text-red-400' : 'hover:bg-blue-100 text-slate-600 hover:text-red-500'
+                  }`}
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                </button>
               </div>
             </motion.div>
           </>
@@ -532,7 +590,14 @@ export default function Home() {
             className="relative flex h-full items-center justify-center px-0 py-0 sm:px-4 sm:py-5 lg:px-8"
           >
             <div className={`flex h-full w-full max-w-[1360px] overflow-hidden shadow-2xl shadow-[#283b82]/20 backdrop-blur-2xl sm:h-[calc(100dvh-2.5rem)] sm:rounded-[32px] sm:border transition-colors duration-500 ${styles.cardBg}`}>
-              <LeftSidebar onSendMessage={handleSend} onNewChat={handleNewChat} styles={styles} />
+              <LeftSidebar
+                onSendMessage={handleSend}
+                onNewChat={handleNewChat}
+                styles={styles}
+                user={user}
+                logout={logout}
+                theme={theme}
+              />
 
               <main className={`relative flex min-w-0 flex-1 flex-col transition-colors duration-500 ${styles.mainBg}`}>
                 <ChatHeader

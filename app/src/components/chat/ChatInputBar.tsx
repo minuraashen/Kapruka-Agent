@@ -23,9 +23,9 @@ export default function ChatInputBar({ onSend }: Props) {
   const inputThemes = {
     light: {
       barBg: "border-t border-white/50 bg-white/35",
-      quickBtn: "border-white/70 bg-white/70 text-[#3850a8] hover:bg-white",
-      formBg: "border-white/70 bg-white/85 shadow-blue-500/10",
-      inputColor: "text-[#10133f] placeholder-[#9098bd]",
+      quickBtn: "border-white/70 bg-white/70 text-[#482880] hover:bg-white",
+      formBg: "border-white/70 bg-white/85 shadow-purple-500/10",
+      inputColor: "text-[#1b0a33] placeholder-[#948ca6]",
     },
     midnight: {
       barBg: "border-t border-white/10 bg-black/35",
@@ -104,7 +104,7 @@ export default function ChatInputBar({ onSend }: Props) {
             className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-lg transition-colors ${
               isLoading || !inputText.trim()
                 ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none"
-                : "bg-gradient-to-r from-[#6d5dfc] to-[#1992ff] text-white shadow-blue-500/25 hover:shadow-xl"
+                : "bg-gradient-to-r from-[#482880] to-[#6d5dfc] text-white shadow-purple-500/25 hover:shadow-xl"
             }`}
           >
             {isLoading ? (

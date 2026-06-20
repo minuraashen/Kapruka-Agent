@@ -83,6 +83,11 @@ interface ChatStore {
   // Theme switcher
   theme: "light" | "midnight" | "sunset";
   setTheme: (theme: "light" | "midnight" | "sunset") => void;
+
+  // Authentication
+  user: { name: string; email: string } | null;
+  login: (user: { name: string; email: string }) => void;
+  logout: () => void;
 }
 
 function generateSessionId(): string {
@@ -148,6 +153,19 @@ export const useChatStore = create<ChatStore>()(
 
       theme: "light",
       setTheme: (theme) => set({ theme }),
+
+      user: null,
+      login: (user) => set({ user }),
+      logout: () =>
+        set({
+          user: null,
+          sessionId: generateSessionId(),
+          messages: [],
+          cart: [],
+          intent: null,
+          inputText: "",
+          state: "splash",
+        }),
     }),
     {
       name: "kiki-chat",
@@ -157,6 +175,7 @@ export const useChatStore = create<ChatStore>()(
         cart: state.cart,
         intent: state.intent,
         theme: state.theme,
+        user: state.user,
       }),
     }
   )
