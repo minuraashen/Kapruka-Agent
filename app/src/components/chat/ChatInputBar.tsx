@@ -18,6 +18,30 @@ export default function ChatInputBar({ onSend }: Props) {
   const setInputText = useChatStore(s => s.setInputText);
   const isLoading = useChatStore(s => s.isLoading);
   const hasMessages = useChatStore(s => s.messages.length > 1);
+  const theme = useChatStore(s => s.theme || "light");
+
+  const inputThemes = {
+    light: {
+      barBg: "border-t border-white/50 bg-white/35",
+      quickBtn: "border-white/70 bg-white/70 text-[#3850a8] hover:bg-white",
+      formBg: "border-white/70 bg-white/85 shadow-blue-500/10",
+      inputColor: "text-[#10133f] placeholder-[#9098bd]",
+    },
+    midnight: {
+      barBg: "border-t border-white/10 bg-black/35",
+      quickBtn: "border-white/10 bg-slate-900/60 text-slate-300 hover:bg-slate-800",
+      formBg: "border-white/10 bg-slate-900/80 shadow-black/40",
+      inputColor: "text-white placeholder-slate-400",
+    },
+    sunset: {
+      barBg: "border-t border-white/40 bg-white/25",
+      quickBtn: "border-white/50 bg-white/50 text-[#854d3e] hover:bg-white",
+      formBg: "border-white/60 bg-white/80 shadow-orange-500/5",
+      inputColor: "text-[#5c2a1c] placeholder-[#c59a8f]",
+    },
+  };
+
+  const t = inputThemes[theme] || inputThemes.light;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +61,7 @@ export default function ChatInputBar({ onSend }: Props) {
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 300, damping: 25, delay: 0.2 }}
-      className="sticky bottom-0 z-40 border-t border-white/50 bg-white/35 px-3 py-3 backdrop-blur-xl sm:px-4 sm:py-4"
+      className={`sticky bottom-0 z-40 px-3 py-3 backdrop-blur-xl sm:px-4 sm:py-4 transition-colors duration-500 ${t.barBg}`}
     >
       <div className="mx-auto max-w-3xl">
         {/* Quick prompts — only before the conversation gets going */}
@@ -49,7 +73,7 @@ export default function ChatInputBar({ onSend }: Props) {
                 type="button"
                 disabled={isLoading}
                 onClick={() => onSend(item.prompt)}
-                className="flex items-center gap-1.5 rounded-full border border-white/70 bg-white/70 px-3 py-1.5 text-[12px] font-semibold text-[#3850a8] shadow-sm transition-colors hover:bg-white disabled:opacity-50"
+                className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold shadow-sm transition-colors disabled:opacity-50 ${t.quickBtn}`}
               >
                 <item.icon className="h-3.5 w-3.5" />
                 {item.label}
@@ -60,7 +84,7 @@ export default function ChatInputBar({ onSend }: Props) {
 
         <form
           onSubmit={handleSubmit}
-          className="flex items-center gap-2 rounded-[22px] border border-white/70 bg-white/85 p-2 shadow-lg shadow-blue-500/10 backdrop-blur"
+          className={`flex items-center gap-2 rounded-[22px] border p-2 shadow-lg backdrop-blur transition-colors duration-500 ${t.formBg}`}
         >
           <input
             type="text"
@@ -69,7 +93,7 @@ export default function ChatInputBar({ onSend }: Props) {
             onKeyDown={handleKeyDown}
             placeholder="Ask Kiki for gifts, cakes, flowers… (English / සිංහල / Tanglish)"
             disabled={isLoading}
-            className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm text-[#10133f] placeholder-[#9098bd] focus:outline-none disabled:opacity-50"
+            className={`min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm focus:outline-none disabled:opacity-50 ${t.inputColor}`}
             style={{ fontFamily: "Inter, sans-serif" }}
           />
           <motion.button

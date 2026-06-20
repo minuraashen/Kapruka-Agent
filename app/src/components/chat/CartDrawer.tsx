@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useChatStore } from "@/store/chatStore";
+import { themeStyles } from "@/pages/Home";
 
 interface Props {
   isOpen: boolean;
@@ -11,8 +12,10 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
   const cart = useChatStore(s => s.cart);
   const removeFromCart = useChatStore(s => s.removeFromCart);
   const setCart = useChatStore(s => s.setCart);
+  const theme = useChatStore(s => s.theme || "light");
 
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const styles = themeStyles[theme] || themeStyles.light;
 
   const updateQty = (productId: string, delta: number) => {
     const newCart = cart.map(item => {
@@ -44,34 +47,40 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed bottom-0 right-0 top-0 z-[70] flex w-full max-w-md flex-col bg-white/95 shadow-2xl backdrop-blur-xl"
+            className={`fixed bottom-0 right-0 top-0 z-[70] flex w-full max-w-md flex-col shadow-2xl backdrop-blur-xl transition-colors duration-500 ${styles.cartDrawerBg}`}
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-blue-100/70 p-5">
+            <div className={`flex items-center justify-between border-b p-5 ${
+              theme === 'midnight' ? 'border-white/10' : 'border-blue-100/70'
+            }`}>
               <div className="flex items-center gap-3">
                 <ShoppingBag className="h-5 w-5 text-[#2563eb]" />
                 <h2
-                  className="text-lg font-bold text-[#10133f]"
+                  className={`text-lg font-bold`}
                   style={{ fontFamily: "Quicksand, sans-serif" }}
                 >
                   Your Cart
                 </h2>
-                <span className="text-sm text-[#6870a7]">
+                <span className={`text-sm ${theme === 'midnight' ? 'text-slate-400' : 'text-[#6870a7]'}`}>
                   ({cart.length} items)
                 </span>
               </div>
               <button
                 onClick={onClose}
-                className="flex h-8 w-8 items-center justify-center rounded-2xl bg-blue-50 transition-colors hover:bg-blue-100"
+                className={`flex h-8 w-8 items-center justify-center rounded-2xl transition-colors ${
+                  theme === 'midnight' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-blue-50 text-slate-700 hover:bg-blue-100'
+                }`}
               >
-                <X className="h-4 w-4 text-[#10133f]" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             {/* Items */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {cart.length === 0 ? (
-                <div className="flex h-full flex-col items-center justify-center text-center text-[#6870a7]">
+                <div className={`flex h-full flex-col items-center justify-center text-center ${
+                  theme === 'midnight' ? 'text-slate-400' : 'text-[#6870a7]'
+                }`}>
                   <ShoppingBag className="w-12 h-12 mb-3 opacity-30" />
                   <p className="text-sm">Your cart is empty</p>
                   <p className="text-xs mt-1">
@@ -86,7 +95,9 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: 50 }}
-                    className="flex items-center gap-3 rounded-2xl border border-blue-100 bg-[#f3f7ff] p-3"
+                    className={`flex items-center gap-3 rounded-2xl border p-3 ${
+                      theme === 'midnight' ? 'border-white/10 bg-slate-900/60' : 'border-blue-100 bg-[#f3f7ff]'
+                    }`}
                   >
                     {item.image && (
                       <img
@@ -96,35 +107,41 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                       />
                     )}
                     <div className="flex-1 min-w-0">
-                      <h3 className="truncate text-sm font-medium text-[#10133f]">
+                      <h3 className={`truncate text-sm font-medium ${theme === 'midnight' ? 'text-slate-100' : 'text-[#10133f]'}`}>
                         {item.name}
                       </h3>
-                      <p className="text-sm font-bold text-[#2563eb]">
+                      <p className={`text-sm font-bold ${theme === 'midnight' ? 'text-indigo-400' : 'text-[#2563eb]'}`}>
                         LKR {item.price.toLocaleString()}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => updateQty(item.productId, -1)}
-                        className="flex h-7 w-7 items-center justify-center rounded-xl bg-white shadow-sm transition-shadow hover:shadow"
+                        className={`flex h-7 w-7 items-center justify-center rounded-xl shadow-sm transition-shadow hover:shadow ${
+                          theme === 'midnight' ? 'bg-slate-800 border border-white/10 text-white hover:bg-slate-700' : 'bg-white text-slate-800'
+                        }`}
                       >
-                        <Minus className="h-3 w-3 text-[#10133f]" />
+                        <Minus className="h-3 w-3" />
                       </button>
-                      <span className="text-sm font-semibold w-5 text-center">
+                      <span className={`text-sm font-semibold w-5 text-center ${theme === 'midnight' ? 'text-white' : 'text-slate-800'}`}>
                         {item.qty}
                       </span>
                       <button
                         onClick={() => updateQty(item.productId, 1)}
-                        className="flex h-7 w-7 items-center justify-center rounded-xl bg-white shadow-sm transition-shadow hover:shadow"
+                        className={`flex h-7 w-7 items-center justify-center rounded-xl shadow-sm transition-shadow hover:shadow ${
+                          theme === 'midnight' ? 'bg-slate-800 border border-white/10 text-white hover:bg-slate-700' : 'bg-white text-slate-800'
+                        }`}
                       >
-                        <Plus className="h-3 w-3 text-[#10133f]" />
+                        <Plus className="h-3 w-3" />
                       </button>
                     </div>
                     <button
                       onClick={() => removeFromCart(item.productId)}
-                      className="w-7 h-7 rounded-full bg-red-50 flex items-center justify-center hover:bg-red-100 transition-colors"
+                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                        theme === 'midnight' ? 'bg-red-500/20 hover:bg-red-500/35 text-red-400' : 'bg-red-50 hover:bg-red-100 text-red-400'
+                      }`}
                     >
-                      <Trash2 className="w-3 h-3 text-red-400" />
+                      <Trash2 className="w-3 h-3" />
                     </button>
                   </motion.div>
                 ))
@@ -133,11 +150,13 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
 
             {/* Footer */}
             {cart.length > 0 && (
-              <div className="border-t border-blue-100/70 bg-white/60 p-5">
+              <div className={`border-t p-5 ${
+                theme === 'midnight' ? 'border-white/10 bg-slate-900/40' : 'border-blue-100/70 bg-white/60'
+              }`}>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm text-[#6870a7]">Total</span>
+                  <span className={`text-sm ${theme === 'midnight' ? 'text-slate-400' : 'text-[#6870a7]'}`}>Total</span>
                   <span
-                    className="text-xl font-bold text-[#10133f]"
+                    className="text-xl font-bold"
                     style={{ fontFamily: "Quicksand, sans-serif" }}
                   >
                     LKR {total.toLocaleString()}

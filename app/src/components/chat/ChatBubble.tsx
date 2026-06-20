@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { User } from "lucide-react";
 import type { ReactNode } from "react";
 import type { ChatMessage } from "@/store/chatStore";
+import { useChatStore } from "@/store/chatStore";
 
 interface Props {
   message: ChatMessage;
@@ -80,6 +81,7 @@ function MarkdownText({ content }: { content: string }) {
 
 export default function ChatBubble({ message, index }: Props) {
   const isUser = message.role === "user";
+  const theme = useChatStore(s => s.theme || "light");
 
   return (
     <motion.div
@@ -117,10 +119,16 @@ export default function ChatBubble({ message, index }: Props) {
         </div>
 
         <div
-          className={`px-4 py-3 text-sm leading-relaxed shadow-sm ${
+          className={`px-4 py-3 text-sm leading-relaxed shadow-sm backdrop-blur-sm transition-colors duration-500 ${
             isUser
               ? "rounded-[18px] rounded-tr-md bg-gradient-to-br from-[#2563eb] to-[#6d5dfc] text-white shadow-blue-500/20"
-              : "rounded-[18px] rounded-tl-md border border-white/70 bg-white/90 text-[#151a43] backdrop-blur-sm"
+              : `rounded-[18px] rounded-tl-md border ${
+                  theme === 'midnight'
+                    ? 'border-white/10 bg-slate-900/90 text-slate-100'
+                    : theme === 'sunset'
+                      ? 'border-orange-100/40 bg-[#fffbf9]/95 text-[#5c2a1c]'
+                      : 'border-white/70 bg-white/90 text-[#151a43]'
+                }`
           }`}
           style={{ fontFamily: "Inter, sans-serif" }}
         >

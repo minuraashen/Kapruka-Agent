@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Plus, ExternalLink, ImageOff, Check } from "lucide-react";
 import { useChatStore } from "@/store/chatStore";
@@ -16,9 +17,38 @@ export default function ProductCard({ product, index, onAddToCart }: Props) {
   const image = product.image || "";
   const inStock = product.in_stock !== false;
 
+  const theme = useChatStore(s => s.theme || "light");
+  const [imageLoaded, setImageLoaded] = useState(false);
+
   const inCart = useChatStore(s =>
     s.cart.some(c => c.productId === product.product_id)
   );
+
+  const cardThemes = {
+    light: {
+      card: "border-white/70 bg-white/90 shadow-blue-500/10 text-[#10133f]",
+      title: "text-[#10133f]",
+      price: "text-[#2563eb]",
+      detailBtn: "border-blue-100 bg-[#f3f7ff] text-[#2563eb] hover:bg-blue-100",
+      glow: "hover:border-[#6d5dfc]/50 hover:shadow-xl hover:shadow-blue-500/20",
+    },
+    midnight: {
+      card: "border-white/10 bg-slate-900/90 shadow-black/40 text-white",
+      title: "text-slate-100",
+      price: "text-indigo-400",
+      detailBtn: "border-white/10 bg-slate-800 text-slate-200 hover:bg-slate-700",
+      glow: "hover:border-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/20",
+    },
+    sunset: {
+      card: "border-white/75 bg-white/90 shadow-orange-500/5 text-[#5c2a1c]",
+      title: "text-[#5c2a1c]",
+      price: "text-[#ea580c]",
+      detailBtn: "border-orange-100 bg-[#fff5f2] text-[#ea580c] hover:bg-orange-100",
+      glow: "hover:border-[#ea580c]/50 hover:shadow-xl hover:shadow-orange-500/15",
+    },
+  };
+
+  const t = cardThemes[theme] || cardThemes.light;
 
   return (
     <motion.div
@@ -31,16 +61,27 @@ export default function ProductCard({ product, index, onAddToCart }: Props) {
         delay: index * 0.06,
       }}
       whileHover={{ y: -6 }}
-      className="group flex w-[230px] shrink-0 snap-start flex-col overflow-hidden rounded-[22px] border border-white/70 bg-white/90 shadow-lg shadow-blue-500/10 backdrop-blur-sm transition-shadow duration-300 hover:shadow-xl hover:shadow-blue-500/20 sm:w-[248px]"
+      className={`group flex w-[230px] shrink-0 snap-start flex-col overflow-hidden rounded-[22px] border backdrop-blur-sm transition-all duration-300 sm:w-[248px] ${t.card} ${t.glow}`}
     >
-      <div className="relative h-[180px] w-full overflow-hidden bg-gradient-to-br from-[#eff6ff] to-[#efe7ff]">
+      <div className={`relative h-[180px] w-full overflow-hidden ${
+        theme === 'midnight' ? 'bg-slate-950' : 'bg-gradient-to-br from-[#eff6ff] to-[#efe7ff]'
+      }`}>
+        {/* Skeleton Shimmer */}
+        {image && !imageLoaded && (
+          <div className="absolute inset-0 animate-pulse bg-slate-200 dark:bg-slate-800" />
+        )}
+
         {image ? (
           <img
             src={image}
             alt={name}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            onLoad={() => setImageLoaded(true)}
+            className={`h-full w-full object-cover transition-all duration-500 group-hover:scale-105 ${
+              imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"
+            }`}
             onError={e => {
+              setImageLoaded(true);
               const el = e.target as HTMLImageElement;
               el.style.display = "none";
               el.parentElement
@@ -76,14 +117,14 @@ export default function ProductCard({ product, index, onAddToCart }: Props) {
 
       <div className="flex flex-1 flex-col p-3.5">
         <h3
-          className="mb-1 line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-[#10133f]"
+          className={`mb-1 line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug transition-colors ${t.title}`}
           style={{ fontFamily: "Inter, sans-serif" }}
         >
           {name}
         </h3>
 
         <div className="mb-3 flex items-baseline justify-between gap-2">
-          <p className="text-lg font-bold text-[#2563eb]">
+          <p className={`text-lg font-bold transition-colors ${t.price}`}>
             {currency} {price.toLocaleString()}
           </p>
           {inStock && product.stock_label && (
@@ -126,7 +167,7 @@ export default function ProductCard({ product, index, onAddToCart }: Props) {
               target="_blank"
               rel="noopener noreferrer"
               title="View on Kapruka"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-[#f3f7ff] text-[#2563eb] transition-colors hover:bg-blue-100"
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors ${t.detailBtn}`}
             >
               <ExternalLink className="h-4 w-4" />
             </a>

@@ -79,6 +79,10 @@ interface ChatStore {
   // Intent
   intent: string | null;
   setIntent: (intent: string | null) => void;
+
+  // Theme switcher
+  theme: "light" | "midnight" | "sunset";
+  setTheme: (theme: "light" | "midnight" | "sunset") => void;
 }
 
 function generateSessionId(): string {
@@ -141,6 +145,9 @@ export const useChatStore = create<ChatStore>()(
 
       intent: null,
       setIntent: (intent) => set({ intent }),
+
+      theme: "light",
+      setTheme: (theme) => set({ theme }),
     }),
     {
       name: "kiki-chat",
@@ -149,6 +156,7 @@ export const useChatStore = create<ChatStore>()(
         state: state.state,
         cart: state.cart,
         intent: state.intent,
+        theme: state.theme,
       }),
     }
   )

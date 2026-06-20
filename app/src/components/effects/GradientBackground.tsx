@@ -14,6 +14,10 @@ precision highp float;
 varying vec2 vUv;
 uniform float u_time;
 uniform vec2 u_resolution;
+uniform vec3 u_c1;
+uniform vec3 u_c2;
+uniform vec3 u_c3;
+uniform vec3 u_c4;
 
 vec4 permute(vec4 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
 vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
@@ -70,11 +74,6 @@ vec3 brandGradient(vec2 uv, float time) {
   float finalNoise = noise1 * 0.6 + noise2 * 0.4;
   float t = finalNoise * 0.5 + 0.5;
 
-  vec3 c1 = vec3(0.79, 0.83, 1.0);
-  vec3 c2 = vec3(0.58, 0.46, 0.94);
-  vec3 c3 = vec3(0.25, 0.55, 0.96);
-  vec3 c4 = vec3(0.80, 0.66, 1.0);
-
   float phase = t * 3.0;
   float segment = floor(phase);
   float blend = fract(phase);
@@ -84,10 +83,10 @@ vec3 brandGradient(vec2 uv, float time) {
   float idx1 = mod(segment + 1.0, 4.0);
 
   vec3 colors[4];
-  colors[0] = c1;
-  colors[1] = c2;
-  colors[2] = c3;
-  colors[3] = c4;
+  colors[0] = u_c1;
+  colors[1] = u_c2;
+  colors[2] = u_c3;
+  colors[3] = u_c4;
 
   vec3 col0 = colors[int(idx0)];
   vec3 col1 = colors[int(idx1)];
@@ -106,9 +105,38 @@ void main() {
 }
 `;
 
+import { useChatStore } from "@/store/chatStore";
+
+const THEME_COLORS = {
+  light: [
+    [0.79, 0.83, 1.0],
+    [0.58, 0.46, 0.94],
+    [0.25, 0.55, 0.96],
+    [0.80, 0.66, 1.0],
+  ],
+  midnight: [
+    [0.05, 0.05, 0.15],
+    [0.10, 0.05, 0.22],
+    [0.03, 0.12, 0.28],
+    [0.12, 0.06, 0.18],
+  ],
+  sunset: [
+    [1.0, 0.72, 0.55],
+    [0.92, 0.42, 0.52],
+    [0.58, 0.28, 0.68],
+    [1.0, 0.48, 0.62],
+  ],
+};
+
 export default function GradientBackground() {
+  const theme = useChatStore(s => s.theme || "light");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
+  const themeRef = useRef(theme);
+
+  useEffect(() => {
+    themeRef.current = theme;
+  }, [theme]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -151,6 +179,16 @@ export default function GradientBackground() {
     const timeLoc = gl.getUniformLocation(program, "u_time");
     const resLoc = gl.getUniformLocation(program, "u_resolution");
 
+    // Get color uniform locations
+    const c1Loc = gl.getUniformLocation(program, "u_c1");
+    const c2Loc = gl.getUniformLocation(program, "u_c2");
+    const c3Loc = gl.getUniformLocation(program, "u_c3");
+    const c4Loc = gl.getUniformLocation(program, "u_c4");
+
+    // Initialize current colors
+    const initialColors = THEME_COLORS[themeRef.current] || THEME_COLORS.light;
+    const currentColors = JSON.parse(JSON.stringify(initialColors));
+
     function resize() {
       const dpr = Math.min(window.devicePixelRatio, 1.5);
       canvas!.width = canvas!.offsetWidth * dpr;
@@ -163,6 +201,21 @@ export default function GradientBackground() {
     window.addEventListener("resize", resize);
 
     function render() {
+      // Smoothly interpolate colors towards the active theme's colors
+      const targetColors = THEME_COLORS[themeRef.current] || THEME_COLORS.light;
+      const speed = 0.035;
+      for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 3; j++) {
+          currentColors[i][j] += (targetColors[i][j] - currentColors[i][j]) * speed;
+        }
+      }
+
+      // Update color uniforms
+      gl!.uniform3fv(c1Loc, currentColors[0]);
+      gl!.uniform3fv(c2Loc, currentColors[1]);
+      gl!.uniform3fv(c3Loc, currentColors[2]);
+      gl!.uniform3fv(c4Loc, currentColors[3]);
+
       gl!.uniform1f(timeLoc, performance.now() * 0.001);
       gl!.drawArrays(gl!.TRIANGLES, 0, 3);
       rafRef.current = requestAnimationFrame(render);
