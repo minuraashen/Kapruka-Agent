@@ -363,6 +363,18 @@ export default function Home() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
+  // During the typewriter reveal we get a tick per few characters; smooth-
+  // scrolling on every tick causes a jittery "vibrating" feel, so throttle to
+  // an instant nudge at most ~10×/sec.
+  const lastScrollRef = useRef(0);
+  const throttledScroll = useCallback(() => {
+    const now = Date.now();
+    if (now - lastScrollRef.current > 100) {
+      lastScrollRef.current = now;
+      chatEndRef.current?.scrollIntoView({ behavior: "auto" });
+    }
+  }, []);
+
   // Auto-scroll to bottom
   useEffect(() => {
     scrollToBottom();
@@ -685,41 +697,49 @@ export default function Home() {
                 />
 
                 <div className="flex-1 space-y-4 overflow-y-auto px-3 py-5 sm:px-8 lg:px-10">
-                  {messages.map((msg, index) => (
-                    <div key={msg.id} className="space-y-2">
-                      <ChatBubble
-                        message={msg}
-                        index={index}
-                        streaming={msg.id === streamingId}
-                        onStreamDone={() => {
-                          setStreamingId(null);
-                          scrollToBottom();
-                        }}
-                        onTick={scrollToBottom}
-                      />
-                      {msg.metadata?.products && msg.metadata.products.length > 0 && (
-                        <ProductCarousel
-                          products={msg.metadata.products}
-                          onAddToCart={handleAddToCart}
+                  {messages.map((msg, index) => {
+                    // Hold the rich cards back until the bubble finishes typing,
+                    // so they slide in after the text instead of popping in mid-
+                    // stream (which looked like a "vibrating" UI).
+                    const cardsReady = msg.id !== streamingId;
+                    return (
+                      <div key={msg.id} className="space-y-2">
+                        <ChatBubble
+                          message={msg}
+                          index={index}
+                          streaming={msg.id === streamingId}
+                          onStreamDone={() => {
+                            setStreamingId(null);
+                            scrollToBottom();
+                          }}
+                          onTick={throttledScroll}
                         />
-                      )}
-                      {msg.metadata?.delivery && (
-                        <div className="flex justify-start pl-11">
-                          <DeliveryCard delivery={msg.metadata.delivery} />
-                        </div>
-                      )}
-                      {msg.metadata?.tracking && (
-                        <div className="flex justify-start pl-11">
-                          <OrderTrackingCard tracking={msg.metadata.tracking} />
-                        </div>
-                      )}
-                      {msg.metadata?.order && (
-                        <div className="flex justify-start pl-11">
-                          <OrderConfirmationCard order={msg.metadata.order} />
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        {cardsReady &&
+                          msg.metadata?.products &&
+                          msg.metadata.products.length > 0 && (
+                            <ProductCarousel
+                              products={msg.metadata.products}
+                              onAddToCart={handleAddToCart}
+                            />
+                          )}
+                        {cardsReady && msg.metadata?.delivery && (
+                          <div className="flex justify-start pl-11">
+                            <DeliveryCard delivery={msg.metadata.delivery} />
+                          </div>
+                        )}
+                        {cardsReady && msg.metadata?.tracking && (
+                          <div className="flex justify-start pl-11">
+                            <OrderTrackingCard tracking={msg.metadata.tracking} />
+                          </div>
+                        )}
+                        {cardsReady && msg.metadata?.order && (
+                          <div className="flex justify-start pl-11">
+                            <OrderConfirmationCard order={msg.metadata.order} />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
 
                   {showOnboarding && (
                     <div className="space-y-5">

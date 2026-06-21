@@ -43,7 +43,7 @@ export default function ThinkingIndicator({ lastUserMessage }: { lastUserMessage
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
       <div
-        className={`flex items-center gap-2.5 rounded-2xl border px-4 py-3 shadow-sm backdrop-blur-sm ${
+        className={`flex items-center gap-2.5 rounded-2xl border px-4 py-3 shadow-sm ${
           dark ? "border-white/10 bg-slate-900/80 text-slate-300" : "border-white/60 bg-white/80 text-[#6870a7]"
         }`}
       >

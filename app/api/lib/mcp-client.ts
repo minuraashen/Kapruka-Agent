@@ -164,18 +164,49 @@ export async function callKaprukaTool(
 }
 
 /**
+ * Run an async mapper over `items` with a bounded number of workers, so we can
+ * fetch many product details concurrently without firing dozens of MCP calls
+ * at once (which would trip rate-limits). Order is preserved.
+ */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  async function worker() {
+    while (cursor < items.length) {
+      const index = cursor++;
+      results[index] = await fn(items[index], index);
+    }
+  }
+  const workers = Array.from(
+    { length: Math.min(limit, items.length) },
+    () => worker()
+  );
+  await Promise.all(workers);
+  return results;
+}
+
+/**
  * Search results don't include images, but product details do. Fetch details
- * for the top few products (in parallel) and merge in their image + blurb so
- * the UI can render real product cards.
+ * for every shown product and merge in their image + blurb so the UI can
+ * render real product cards. Bounded concurrency keeps it fast without trailing
+ * cards missing images (every card the user sees gets enriched, not just the
+ * first few). `max` only guards against a pathological large result set.
  */
 export async function enrichProductsWithImages(
   products: ParsedProduct[],
-  max = 6
+  max = 24,
+  concurrency = 5
 ): Promise<ParsedProduct[]> {
   const enrichable = products.slice(0, max);
 
-  const enriched = await Promise.all(
-    enrichable.map(async (product) => {
+  const enriched = await mapWithConcurrency(
+    enrichable,
+    concurrency,
+    async (product) => {
       if (!product.product_id) return product;
       try {
         const raw = await callKaprukaTool("kapruka_get_product", {
@@ -193,7 +224,7 @@ export async function enrichProductsWithImages(
       } catch {
         return product;
       }
-    })
+    }
   );
 
   return [...enriched, ...products.slice(max)];

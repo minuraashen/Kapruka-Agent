@@ -86,21 +86,21 @@ export default function OnboardingCards({ onSendMessage, onOpenGenie }: Onboardi
         whileHover={{ scale: 1.02, y: -3, boxShadow: "0 22px 44px rgba(72, 40, 128, 0.22)" }}
         whileTap={{ scale: 0.98 }}
         onClick={onOpenGenie}
-        className="flex w-full cursor-pointer items-center gap-4 rounded-[24px] bg-gradient-to-br from-[#482880] via-[#6d5dfc] to-[#1992ff] p-5 text-white shadow-lg shadow-purple-500/25 transition-all duration-200"
+        className="flex w-full cursor-pointer items-center gap-3 rounded-[20px] bg-gradient-to-br from-[#482880] via-[#6d5dfc] to-[#1992ff] p-3.5 text-white shadow-lg shadow-purple-500/25 transition-all duration-200"
       >
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20">
-          <Wand2 className="h-6 w-6" strokeWidth={1.5} />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/20">
+          <Wand2 className="h-5 w-5" strokeWidth={1.5} />
         </div>
         <div className="text-left">
-          <h3 className="text-base font-bold" style={{ fontFamily: "Quicksand, sans-serif" }}>
+          <h3 className="text-sm font-bold" style={{ fontFamily: "Quicksand, sans-serif" }}>
             {t("onb.genieTitle")}
           </h3>
-          <p className="text-xs leading-relaxed opacity-90">{t("onb.genieDesc")}</p>
+          <p className="text-[11px] leading-relaxed opacity-90">{t("onb.genieDesc")}</p>
         </div>
       </motion.button>
 
       {/* Three modes */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2.5">
         {cards.map(card => (
           <motion.button
             key={card.id}
@@ -108,14 +108,14 @@ export default function OnboardingCards({ onSendMessage, onOpenGenie }: Onboardi
             whileHover={{ scale: 1.03, y: -3, boxShadow: "0 22px 44px rgba(72, 40, 128, 0.18)" }}
             whileTap={{ scale: 0.98 }}
             onClick={card.onClick}
-            className={`flex cursor-pointer flex-col items-center gap-2.5 rounded-[24px] bg-gradient-to-br p-5 text-white shadow-lg transition-all duration-200 ${card.color} ${card.shadow}`}
+            className={`flex cursor-pointer flex-col items-center gap-2 rounded-[18px] bg-gradient-to-br p-3.5 text-white shadow-md transition-all duration-200 ${card.color} ${card.shadow}`}
           >
-            <card.icon className="h-8 w-8" strokeWidth={1.5} />
+            <card.icon className="h-6 w-6" strokeWidth={1.5} />
             <div className="text-center">
-              <h3 className="mb-0.5 text-sm font-bold" style={{ fontFamily: "Quicksand, sans-serif" }}>
+              <h3 className="text-[13px] font-bold" style={{ fontFamily: "Quicksand, sans-serif" }}>
                 {card.title}
               </h3>
-              <p className="hidden text-xs leading-relaxed opacity-90 sm:block">{card.description}</p>
+              <p className="hidden text-[11px] leading-relaxed opacity-90 sm:block">{card.description}</p>
             </div>
           </motion.button>
         ))}

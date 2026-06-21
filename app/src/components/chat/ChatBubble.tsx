@@ -119,7 +119,7 @@ export default function ChatBubble({ message, index, streaming, onStreamDone, on
     setRevealed("");
     setIsTyping(true);
     const id = setInterval(() => {
-      i += 5;
+      i += 7;
       if (i >= full.length) {
         setRevealed(full);
         setIsTyping(false);
@@ -173,7 +173,7 @@ export default function ChatBubble({ message, index, streaming, onStreamDone, on
 
         <div className="flex flex-col gap-1.5">
           <div
-            className={`px-4 py-3 text-sm leading-relaxed shadow-sm backdrop-blur-sm transition-colors duration-500 ${
+            className={`px-4 py-3 text-sm leading-relaxed shadow-sm transition-colors duration-500 ${
               isUser
                 ? "rounded-[18px] rounded-tr-md bg-gradient-to-br from-[#2563eb] to-[#6d5dfc] text-white shadow-blue-500/20"
                 : `rounded-[18px] rounded-tl-md border ${

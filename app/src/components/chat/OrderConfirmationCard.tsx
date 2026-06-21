@@ -14,7 +14,7 @@ export default function OrderConfirmationCard({ order }: { order: OrderInfo }) {
       initial={{ opacity: 0, y: 18, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: "spring", stiffness: 240, damping: 20 }}
-      className={`my-2 w-full max-w-sm overflow-hidden rounded-[24px] border shadow-xl backdrop-blur-sm ${
+      className={`my-2 w-full max-w-sm overflow-hidden rounded-[24px] border shadow-xl ${
         dark ? "border-white/10 bg-slate-900/90 text-slate-100" : "border-white/70 bg-white/95 text-[#10133f]"
       }`}
     >

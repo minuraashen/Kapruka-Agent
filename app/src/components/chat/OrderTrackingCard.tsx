@@ -14,7 +14,7 @@ export default function OrderTrackingCard({ tracking }: { tracking: TrackingInfo
       initial={{ opacity: 0, y: 16, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: "spring", stiffness: 260, damping: 22 }}
-      className={`my-2 w-full max-w-sm overflow-hidden rounded-[22px] border shadow-lg backdrop-blur-sm ${
+      className={`my-2 w-full max-w-sm overflow-hidden rounded-[22px] border shadow-lg ${
         dark ? "border-white/10 bg-slate-900/85 text-slate-100" : "border-white/70 bg-white/90 text-[#10133f]"
       }`}
     >

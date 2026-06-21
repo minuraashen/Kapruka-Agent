@@ -14,7 +14,7 @@ export default function ProductCarousel({ products, onAddToCart }: Props) {
 
   const scroll = (direction: "left" | "right") => {
     if (!scrollRef.current) return;
-    const scrollAmount = 280;
+    const scrollAmount = 200;
     scrollRef.current.scrollBy({
       left: direction === "left" ? -scrollAmount : scrollAmount,
       behavior: "smooth",
@@ -51,7 +51,7 @@ export default function ProductCarousel({ products, onAddToCart }: Props) {
       {/* Scrollable Container */}
       <div
         ref={scrollRef}
-        className="scrollbar-hide flex gap-4 overflow-x-auto px-8 py-2"
+        className="scrollbar-hide flex gap-3 overflow-x-auto px-7 py-2"
         style={{
           scrollSnapType: "x mandatory",
           scrollbarWidth: "none",

@@ -63,9 +63,9 @@ export default function ProductCard({ product, index, onAddToCart }: Props) {
         delay: index * 0.06,
       }}
       whileHover={{ y: -6 }}
-      className={`group flex w-[230px] shrink-0 snap-start flex-col overflow-hidden rounded-[22px] border backdrop-blur-sm transition-all duration-300 sm:w-[248px] ${t.card} ${t.glow}`}
+      className={`group flex w-[170px] shrink-0 snap-start flex-col overflow-hidden rounded-[18px] border transition-all duration-300 sm:w-[188px] ${t.card} ${t.glow}`}
     >
-      <div className={`relative h-[180px] w-full overflow-hidden ${
+      <div className={`relative h-[132px] w-full overflow-hidden ${
         theme === 'midnight' ? 'bg-slate-950' : 'bg-gradient-to-br from-[#eff6ff] to-[#efe7ff]'
       }`}>
         {/* Skeleton Shimmer */}
@@ -103,7 +103,7 @@ export default function ProductCard({ product, index, onAddToCart }: Props) {
         </div>
 
         {product.category && (
-          <span className={`absolute left-2 top-2 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-semibold capitalize shadow-sm backdrop-blur ${t.price}`}>
+          <span className={`absolute left-2 top-2 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold capitalize shadow-sm ${t.price}`}>
             {product.category}
           </span>
         )}
@@ -117,32 +117,32 @@ export default function ProductCard({ product, index, onAddToCart }: Props) {
         )}
       </div>
 
-      <div className="flex flex-1 flex-col p-3.5">
+      <div className="flex flex-1 flex-col p-2.5">
         <h3
-          className={`mb-1 line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug transition-colors ${t.title}`}
+          className={`mb-1 line-clamp-2 min-h-[2.1rem] text-[12px] font-semibold leading-snug transition-colors ${t.title}`}
           style={{ fontFamily: "Inter, sans-serif" }}
         >
           {name}
         </h3>
 
-        <div className="mb-3 flex items-baseline justify-between gap-2">
-          <p className={`text-lg font-bold transition-colors ${t.price}`}>
+        <div className="mb-2 flex items-baseline justify-between gap-2">
+          <p className={`text-[15px] font-bold transition-colors ${t.price}`}>
             {currency} {price.toLocaleString()}
           </p>
           {inStock && product.stock_label && (
-            <span className="text-[10px] font-medium text-emerald-600">
+            <span className="text-[9px] font-medium text-emerald-600">
               {product.stock_label}
             </span>
           )}
         </div>
 
-        <div className="mt-auto flex items-center gap-2">
+        <div className="mt-auto flex items-center gap-1.5">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => onAddToCart(product)}
             disabled={!inStock}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition-all ${
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[12px] font-semibold transition-all ${
               !inStock
                 ? "cursor-not-allowed bg-gray-200 text-gray-400"
                 : inCart
@@ -152,12 +152,12 @@ export default function ProductCard({ product, index, onAddToCart }: Props) {
           >
             {inCart ? (
               <>
-                <Check className="h-4 w-4" />
+                <Check className="h-3.5 w-3.5" />
                 {tr("cart.added")}
               </>
             ) : (
               <>
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" />
                 {tr("cart.add")}
               </>
             )}
@@ -169,9 +169,9 @@ export default function ProductCard({ product, index, onAddToCart }: Props) {
               target="_blank"
               rel="noopener noreferrer"
               title="View on Kapruka"
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors ${t.detailBtn}`}
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors ${t.detailBtn}`}
             >
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink className="h-3.5 w-3.5" />
             </a>
           )}
         </div>
