@@ -142,28 +142,55 @@ export default function GradientBackground() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const gl = canvas.getContext("webgl", { antialias: false, alpha: false });
+    let gl: WebGLRenderingContext | null = null;
+    try {
+      gl =
+        (canvas.getContext("webgl", { antialias: false, alpha: false }) as
+          | WebGLRenderingContext
+          | null) ||
+        (canvas.getContext("experimental-webgl", {
+          antialias: false,
+          alpha: false,
+        }) as WebGLRenderingContext | null);
+    } catch {
+      gl = null;
+    }
+    // No WebGL (some judges' browsers/GPUs): bail gracefully. The themed solid
+    // background colour underneath still shows, so the UI is never blank.
     if (!gl) return;
 
-    // Compile shaders
+    // Compile a shader and verify it actually compiled — a silent failure here
+    // is what produced the "program not valid" console spam.
     function createShader(
       gl: WebGLRenderingContext,
       type: number,
       source: string
-    ) {
-      const shader = gl.createShader(type)!;
+    ): WebGLShader | null {
+      const shader = gl.createShader(type);
+      if (!shader) return null;
       gl.shaderSource(shader, source);
       gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.warn("[GradientBackground] shader compile failed:", gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
+      }
       return shader;
     }
 
     const vs = createShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
     const fs = createShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
+    if (!vs || !fs) return;
 
-    const program = gl.createProgram()!;
+    const program = gl.createProgram();
+    if (!program) return;
     gl.attachShader(program, vs);
     gl.attachShader(program, fs);
     gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.warn("[GradientBackground] program link failed:", gl.getProgramInfoLog(program));
+      return;
+    }
     gl.useProgram(program);
 
     // Fullscreen triangle
