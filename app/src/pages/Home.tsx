@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import {
   Clock3,
   Compass,
@@ -37,6 +38,7 @@ import OrderConfirmationCard from "@/components/chat/OrderConfirmationCard";
 import ThinkingIndicator from "@/components/chat/ThinkingIndicator";
 import GiftGenie from "@/components/chat/GiftGenie";
 import FestivalChips from "@/components/chat/FestivalChips";
+import SuggestionChips from "@/components/chat/SuggestionChips";
 
 interface NavItem {
   icon: typeof Compass;
@@ -493,15 +495,14 @@ export default function Home() {
         });
       } catch (error) {
         console.error("Chat error:", error);
-        const assistantId = Date.now() + 1;
-        setStreamingId(assistantId);
-        addMessage({
-          id: assistantId,
-          sessionId,
-          role: "assistant",
-          content:
-            "Oops, something hiccuped on my end. 😅 Mind trying that again in a moment?",
-          createdAt: new Date(),
+        // Surface a graceful, dismissible toast with one-tap retry instead of a
+        // dead-end error bubble — important on the rate-limited free model.
+        toast.error(t("error.title"), {
+          description: t("error.body"),
+          action: {
+            label: t("error.retry"),
+            onClick: () => handleSendRef.current?.(text),
+          },
         });
       } finally {
         setIsLoading(false);
@@ -516,8 +517,15 @@ export default function Home() {
       setIsLoading,
       sendMessageMutation,
       setState,
+      t,
     ]
   );
+
+  // Stable handle to the latest handleSend so the retry toast can re-fire the
+  // exact failed message without re-creating the callback (same ref pattern as
+  // ChatBubble's onStreamDone/onTick handles).
+  const handleSendRef = useRef(handleSend);
+  handleSendRef.current = handleSend;
 
   const handleAddToCart = useCallback(
     (product: Product) => {
@@ -558,6 +566,9 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const styles = themeStyles[theme] || themeStyles.light;
   const showOnboarding = state === "onboarding" && messages.length <= 1 && !genieOpen;
+  const lastAssistantId = [...messages]
+    .reverse()
+    .find(m => m.role === "assistant")?.id;
 
   return (
     <div className={`h-[100dvh] w-screen overflow-hidden transition-colors duration-500 ${styles.outerBg}`}>
@@ -737,6 +748,14 @@ export default function Home() {
                             <OrderConfirmationCard order={msg.metadata.order} />
                           </div>
                         )}
+                        {cardsReady &&
+                          !isLoading &&
+                          msg.role === "assistant" &&
+                          msg.id === lastAssistantId &&
+                          !showOnboarding &&
+                          state !== "checkout" && (
+                            <SuggestionChips message={msg} onSend={handleSend} />
+                          )}
                       </div>
                     );
                   })}

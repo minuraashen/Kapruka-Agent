@@ -94,6 +94,25 @@ export const translations: Record<Lang, Record<string, string>> = {
     "genie.cancel": "Cancel",
     "genie.promptTemplate": "Help me find a gift for my {who} for {occasion}, budget {budget}. Show me some lovely options and recommend your favourite.",
 
+    // Errors / toasts
+    "error.title": "That didn't go through",
+    "error.body": "Kiki couldn't reach the catalog just now. Mind trying again?",
+    "error.retry": "Retry",
+
+    // Follow-up suggestion chips (under the latest Kiki reply)
+    "suggest.label": "Try next",
+    "suggest.compare": "Compare top picks",
+    "suggest.cheaper": "Cheaper options",
+    "suggest.delivery": "Check delivery",
+    "suggest.giftmsg": "Add a gift message",
+    "suggest.checkout": "Checkout",
+    "suggest.changedate": "Try another date",
+    "suggest.trackthis": "Track this order",
+    "suggest.shopmore": "Shop something else",
+    "suggest.gifts": "Gift ideas",
+    "suggest.cakes": "Birthday cakes",
+    "suggest.track": "Track an order",
+
     // Thinking / tool status
     "think.default": "Kiki is thinking…",
     "think.search": "Searching the Kapruka catalog…",
@@ -122,6 +141,12 @@ export const translations: Record<Lang, Record<string, string>> = {
     "cart.added": "Added",
     "cart.outOfStock": "Out of Stock",
     "cart.noPreview": "No preview",
+
+    // Product quick-view
+    "qv.about": "About this item",
+    "qv.qty": "Quantity",
+    "qv.viewOnKapruka": "View on Kapruka",
+    "qv.details": "Quick view",
 
     // Delivery card
     "delivery.title": "Delivery quote",
@@ -272,6 +297,23 @@ export const translations: Record<Lang, Record<string, string>> = {
     "genie.cancel": "අවලංගු කරන්න",
     "genie.promptTemplate": "මගේ {who}ට {occasion} එකකට {budget} අයවැයකින් තෑග්ගක් හොයලා දෙන්න. හොඳ විකල්ප කීපයක් පෙන්නලා, ඔයාට වඩාම හොඳ එක යෝජනා කරන්න.",
 
+    "error.title": "ඒක හරියට ගියේ නෑ",
+    "error.body": "Kiki ට දැන් නාමාවලියට සම්බන්ධ වෙන්න බැරි වුණා. ආයෙ උත්සාහ කරමුද?",
+    "error.retry": "ආයෙ බලන්න",
+
+    "suggest.label": "මීළඟට",
+    "suggest.compare": "හොඳම ඒවා සංසන්දනය කරන්න",
+    "suggest.cheaper": "ලාභ විකල්ප",
+    "suggest.delivery": "බෙදාහැරීම බලන්න",
+    "suggest.giftmsg": "තෑගි පණිවිඩයක් දාන්න",
+    "suggest.checkout": "ඇණවුම සම්පූර්ණ කරන්න",
+    "suggest.changedate": "වෙන දිනයක් බලමු",
+    "suggest.trackthis": "මේ ඇණවුම සොයන්න",
+    "suggest.shopmore": "වෙන දෙයක් බලමු",
+    "suggest.gifts": "තෑගි අදහස්",
+    "suggest.cakes": "උපන්දින කේක්",
+    "suggest.track": "ඇණවුමක් සොයන්න",
+
     "think.default": "Kiki හිතනවා…",
     "think.search": "Kapruka නාමාවලියෙන් හොයනවා…",
     "think.delivery": "බෙදාහැරීම බලනවා…",
@@ -297,6 +339,11 @@ export const translations: Record<Lang, Record<string, string>> = {
     "cart.added": "එකතු කළා",
     "cart.outOfStock": "තොගයේ නැත",
     "cart.noPreview": "පින්තූරයක් නැත",
+
+    "qv.about": "මේ භාණ්ඩය ගැන",
+    "qv.qty": "ප්‍රමාණය",
+    "qv.viewOnKapruka": "Kapruka හි බලන්න",
+    "qv.details": "ඉක්මන් බැල්ම",
 
     "delivery.title": "බෙදාහැරීම් විස්තර",
     "delivery.available": "බෙදාහැරීම තියෙනවා",
@@ -381,6 +428,14 @@ export const localizedPrompts: Record<Lang, Record<string, string>> = {
     festVesak: "Show me Vesak gifts, lanterns and treats.",
     festChristmas: "Show me Christmas gift hampers and cakes.",
     festBirthday: "Show me birthday cakes and gift ideas.",
+    sgCompare: "Compare your top picks and tell me which one is best, and why.",
+    sgCheaper: "Show me some more affordable options.",
+    sgDelivery: "Can you deliver these to Colombo? What's the delivery fee?",
+    sgGiftMsg: "I'd like to add a gift message to this.",
+    sgCheckout: "I'm ready to check out with what's in my cart.",
+    sgChangeDate: "Can we try a different delivery date?",
+    sgTrackThis: "Track this order for me, please.",
+    sgShopMore: "Let's look at something else.",
   },
   si: {
     explore: "මේ වෙලාවේ ජනප්‍රිය Kapruka තෑගි සහ හැම්පර් පෙන්වන්න.",
@@ -397,6 +452,14 @@ export const localizedPrompts: Record<Lang, Record<string, string>> = {
     festVesak: "වෙසක් තෑගි, කූඩු සහ රසකැවිලි පෙන්වන්න.",
     festChristmas: "නත්තල් තෑගි හැම්පර් සහ කේක් පෙන්වන්න.",
     festBirthday: "උපන්දින කේක් සහ තෑගි අදහස් පෙන්වන්න.",
+    sgCompare: "ඔයාගේ හොඳම තේරීම් සංසන්දනය කරලා, මොකක්ද හොඳම කියලා ඇයි කියලත් කියන්න.",
+    sgCheaper: "ටිකක් ලාභ විකල්ප කීපයක් පෙන්වන්න.",
+    sgDelivery: "මේවා කොළඹට බෙදාහැරිය හැකිද? ගාස්තුව කීයද?",
+    sgGiftMsg: "මට මේකට තෑගි පණිවිඩයක් එකතු කරන්න ඕන.",
+    sgCheckout: "මගේ කරත්තයේ තියෙන දේවල් එක්ක ඇණවුම සම්පූර්ණ කරන්න ලෑස්තියි.",
+    sgChangeDate: "වෙන බෙදාහැරීම් දිනයක් බලමුද?",
+    sgTrackThis: "කරුණාකර මේ ඇණවුම සොයන්න.",
+    sgShopMore: "වෙන දෙයක් බලමු.",
   },
 };
 

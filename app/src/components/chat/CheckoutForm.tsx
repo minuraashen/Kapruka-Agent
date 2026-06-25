@@ -69,6 +69,21 @@ export default function CheckoutForm() {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
+  const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+  // Per-step validation so the user can't advance (or place an order) with
+  // missing required fields — and so we never submit an undeliverable order.
+  const deliveryBlocked = deliveryInfo !== null && !deliveryInfo.available;
+  const step0Valid =
+    form.recipientName.trim() !== "" &&
+    form.recipientAddress.trim() !== "" &&
+    form.recipientCity.trim() !== "" &&
+    form.recipientPhone.trim() !== "";
+  const step1Valid = form.deliveryDate.trim() !== "";
+  const step2Valid =
+    form.senderName.trim() !== "" && isEmail(form.senderEmail) && !deliveryBlocked;
+  const canAdvance = step === 0 ? step0Valid : step === 1 ? step1Valid : step2Valid;
+
   // Verify delivery is actually possible before taking the order — fulfils the
   // delivery-date constraint requirement on the manual checkout path too.
   const goToSender = async () => {
@@ -90,7 +105,7 @@ export default function CheckoutForm() {
   };
 
   const handleSubmit = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0 || !step2Valid) return;
     setIsSubmitting(true);
 
     try {
@@ -381,8 +396,13 @@ export default function CheckoutForm() {
 
           {/* Delivery availability result */}
           {deliveryInfo && (
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-2">
               <DeliveryCard delivery={deliveryInfo} />
+              {deliveryBlocked && (
+                <p className="rounded-xl bg-rose-50 px-3 py-2 text-center text-xs font-medium text-rose-600">
+                  {t("checkout.deliveryBad")}
+                </p>
+              )}
             </div>
           )}
 
@@ -462,8 +482,8 @@ export default function CheckoutForm() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => (step === 1 ? goToSender() : setStep(step + 1))}
-            disabled={checkingDelivery}
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#6d5dfc] to-[#1992ff] py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 disabled:opacity-60"
+            disabled={checkingDelivery || !canAdvance}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#6d5dfc] to-[#1992ff] py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {checkingDelivery ? (
               <>
@@ -479,8 +499,8 @@ export default function CheckoutForm() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#1d4ed8] to-[#6d5dfc] py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 disabled:opacity-50"
+            disabled={isSubmitting || !canAdvance}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#1d4ed8] to-[#6d5dfc] py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? (
               <>

@@ -1,7 +1,8 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "./ProductCard";
+import ProductQuickView from "./ProductQuickView";
 import type { Product } from "@/store/chatStore";
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 
 export default function ProductCarousel({ products, onAddToCart }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [quickView, setQuickView] = useState<Product | null>(null);
 
   const scroll = (direction: "left" | "right") => {
     if (!scrollRef.current) return;
@@ -71,10 +73,13 @@ export default function ProductCarousel({ products, onAddToCart }: Props) {
               product={product}
               index={index}
               onAddToCart={onAddToCart}
+              onQuickView={setQuickView}
             />
           </div>
         ))}
       </div>
+
+      <ProductQuickView product={quickView} onClose={() => setQuickView(null)} />
 
       <style>{`
         .scrollbar-hide::-webkit-scrollbar {

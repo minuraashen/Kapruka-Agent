@@ -27,8 +27,53 @@ function getLlmClient() {
     apiKey: env.llmApiKey,
     baseURL: env.llmBaseUrl,
     maxRetries: 1,
-    timeout: 20000,
+    timeout: 30000,
   });
+}
+
+function getStatus(error: unknown): number | undefined {
+  return error && typeof error === "object"
+    ? (error as { status?: number }).status
+    : undefined;
+}
+
+// Call the LLM across the configured free-model fallback chain. A free model
+// that 429s (or otherwise errors) is retried with backoff, then we fall through
+// to the next model in env.llmModels. This is the zero-cost substitute for a
+// paid model: if one free model is rate-limited, another usually answers.
+async function createChatCompletion(
+  client: OpenAI,
+  body: Omit<OpenAI.Chat.ChatCompletionCreateParamsNonStreaming, "model">
+): Promise<OpenAI.Chat.ChatCompletion> {
+  const models = env.llmModels.length > 0 ? env.llmModels : [env.llmModel];
+  let lastError: unknown;
+
+  for (let m = 0; m < models.length; m++) {
+    const model = models[m];
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await client.chat.completions.create({ ...body, model });
+      } catch (error) {
+        lastError = error;
+        const status = getStatus(error);
+        // Rate-limited: back off and retry the same model a couple of times…
+        if (status === 429 && attempt < 2) {
+          const delay = 1200 * (attempt + 1);
+          console.warn(`[LLM] 429 on ${model}; retry in ${delay}ms`);
+          await sleep(delay);
+          continue;
+        }
+        // …otherwise stop retrying this model and fall through to the next one.
+        console.warn(
+          `[LLM] ${model} failed (${status ?? "no status"}); ` +
+            (m < models.length - 1 ? "falling back to next model" : "no more models")
+        );
+        break;
+      }
+    }
+  }
+
+  throw lastError ?? new Error("All configured LLM models failed.");
 }
 
 function getLlmErrorMessage(error: unknown) {
@@ -304,34 +349,20 @@ export const chatRouter = createRouter({
       for (let i = 0; i < 5; i++) {
         let response: OpenAI.Chat.ChatCompletion | undefined;
 
-        // Free OpenRouter models rate-limit aggressively — retry with backoff.
-        for (let attempt = 0; attempt < 3; attempt++) {
-          try {
-            response = await openrouter.chat.completions.create({
-              model: env.llmModel,
-              messages: messagesForAI,
-              tools: TOOLS,
-              tool_choice: "auto",
-              temperature: 0.8,
-            });
-            break;
-          } catch (error) {
-            const status =
-              error && typeof error === "object"
-                ? (error as { status?: number }).status
-                : undefined;
-            const errorMsg =
-              error instanceof Error ? error.message : String(error);
-            if (status === 429 && attempt < 2) {
-              const delay = 1500 * (attempt + 1);
-              console.warn(`[LLM] 429 rate-limit; retrying in ${delay}ms`);
-              await sleep(delay);
-              continue;
-            }
-            console.error("[LLM] Chat completion failed:", errorMsg);
-            assistantContent = getLlmErrorMessage(error);
-            break;
-          }
+        // Free OpenRouter models rate-limit aggressively — retry with backoff
+        // and fall through the configured free-model chain on failure.
+        try {
+          response = await createChatCompletion(openrouter, {
+            messages: messagesForAI,
+            tools: TOOLS,
+            tool_choice: "auto",
+            temperature: 0.8,
+          });
+        } catch (error) {
+          const errorMsg =
+            error instanceof Error ? error.message : String(error);
+          console.error("[LLM] Chat completion failed:", errorMsg);
+          assistantContent = getLlmErrorMessage(error);
         }
 
         if (!response) break;

@@ -9,9 +9,10 @@ interface Props {
   product: Product;
   index: number;
   onAddToCart: (product: Product) => void;
+  onQuickView?: (product: Product) => void;
 }
 
-export default function ProductCard({ product, index, onAddToCart }: Props) {
+export default function ProductCard({ product, index, onAddToCart, onQuickView }: Props) {
   const name = product.name || "Product";
   const price = product.price || 0;
   const currency = product.currency || "LKR";
@@ -65,7 +66,10 @@ export default function ProductCard({ product, index, onAddToCart }: Props) {
       whileHover={{ y: -6 }}
       className={`group flex w-[170px] shrink-0 snap-start flex-col overflow-hidden rounded-[18px] border transition-all duration-300 sm:w-[188px] ${t.card} ${t.glow}`}
     >
-      <div className={`relative h-[132px] w-full overflow-hidden ${
+      <div
+        role={onQuickView ? "button" : undefined}
+        onClick={onQuickView ? () => onQuickView(product) : undefined}
+        className={`relative h-[132px] w-full overflow-hidden ${onQuickView ? "cursor-pointer" : ""} ${
         theme === 'midnight' ? 'bg-slate-950' : 'bg-gradient-to-br from-[#eff6ff] to-[#efe7ff]'
       }`}>
         {/* Skeleton Shimmer */}
@@ -101,6 +105,12 @@ export default function ProductCard({ product, index, onAddToCart }: Props) {
           <ImageOff className="h-9 w-9" />
           <span className="text-[10px] font-medium">{tr("cart.noPreview")}</span>
         </div>
+
+        {onQuickView && inStock && (
+          <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center bg-gradient-to-t from-black/55 to-transparent py-1.5 text-[10px] font-semibold text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            {tr("qv.details")}
+          </span>
+        )}
 
         {product.category && (
           <span className={`absolute left-2 top-2 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold capitalize shadow-sm ${t.price}`}>
