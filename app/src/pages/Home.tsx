@@ -13,6 +13,11 @@ import {
   Trash2,
   X,
   LogOut,
+  Cake,
+  Flower2,
+  Truck,
+  Languages,
+  ArrowRight,
 } from "lucide-react";
 import { useChatStore } from "@/store/chatStore";
 import type {
@@ -48,73 +53,156 @@ interface NavItem {
 
 function SplashScreen({ onStart }: { onStart: () => void }) {
   const { t } = useT();
+  const theme = useChatStore(s => s.theme || "light");
+  const language = useChatStore(s => s.language || "en");
+  const setLanguage = useChatStore(s => s.setLanguage);
+  const dark = theme === "midnight";
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.09, delayChildren: 0.1 } },
+  } as const;
+  const item = {
+    hidden: { y: 24, opacity: 0 },
+    show: { y: 0, opacity: 1, transition: { type: "spring" as const, stiffness: 260, damping: 22 } },
+  };
+
+  const features = [
+    { icon: Gift, label: t("splash.feat.gifts") },
+    { icon: Cake, label: t("splash.feat.cakes") },
+    { icon: Flower2, label: t("splash.feat.flowers") },
+    { icon: Truck, label: t("splash.feat.delivery") },
+    { icon: Languages, label: t("splash.feat.sinhala") },
+  ];
+
+  const headingColor = dark ? "text-white" : "text-[#1a1140]";
+  const subColor = dark ? "text-slate-300" : "text-[#5f558a]";
+  const pillClass = dark
+    ? "border-white/10 bg-white/5 text-slate-200"
+    : "border-white/70 bg-white/55 text-[#482880]";
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-40 flex flex-col items-center justify-center px-6"
+      exit={{ opacity: 0, scale: 1.02 }}
+      transition={{ duration: 0.4 }}
+      className="fixed inset-0 z-40 flex items-center justify-center px-5 py-8"
     >
       <motion.div
-        initial={{ y: -100, opacity: 0, rotateX: 30, rotateZ: -15 }}
-        animate={{ y: 0, opacity: 1, rotateX: 30, rotateZ: -15 }}
-        transition={{ type: "spring", stiffness: 200, damping: 20 }}
-        className="relative"
-        style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className={`relative w-full max-w-lg overflow-hidden rounded-[34px] border px-7 py-9 text-center shadow-2xl backdrop-blur-2xl sm:px-10 sm:py-11 ${
+          dark ? "border-white/10 bg-slate-950/40 shadow-black/40" : "border-white/60 bg-white/35 shadow-purple-500/20"
+        }`}
       >
-        <h1
-          className="select-none text-[26vw] font-bold leading-none sm:text-[20vw] md:text-[15vw]"
-          style={{
-            fontFamily: "Quicksand, sans-serif",
-            background:
-              "linear-gradient(135deg, #10133f 0%, #2563eb 50%, #6d5dfc 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
-          KIKI
-        </h1>
+        {/* Decorative top glow */}
+        <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-gradient-to-br from-[#6d5dfc]/40 to-[#eab308]/30 blur-3xl" />
+
+        {/* Kapruka badge */}
         <motion.div
-          animate={{
-            y: [0, -10, 0],
-            rotate: [0, 5, -5, 0],
-          }}
-          transition={{
-            repeat: Infinity,
-            duration: 4,
-            ease: "easeInOut",
-          }}
-          className="absolute -right-6 -top-6 flex h-14 w-14 items-center justify-center rounded-3xl bg-gradient-to-br from-[#7c3aed] to-[#0ea5e9] text-white shadow-lg shadow-indigo-500/30 sm:-right-8 sm:-top-8 sm:h-20 sm:w-20"
+          variants={item}
+          className={`relative mx-auto mb-7 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 ${pillClass}`}
         >
-          <Sparkles className="h-6 w-6 sm:h-9 sm:w-9" />
+          <img src="/kapruka-logo.png" alt="Kapruka" className="h-4 w-auto rounded object-contain" />
+          <span className="text-[11px] font-bold uppercase tracking-wider">{t("splash.badge")}</span>
         </motion.div>
-      </motion.div>
 
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="mt-6 text-center text-sm font-semibold text-[#5f67a8] sm:text-base"
-        style={{ fontFamily: "Quicksand, sans-serif" }}
-      >
-        {t("splash.tagline")}
-      </motion.p>
+        {/* Avatar with animated glow ring */}
+        <motion.div variants={item} className="relative mx-auto mb-6 h-28 w-28 sm:h-32 sm:w-32">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 12, ease: "linear" }}
+            className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#482880] via-[#6d5dfc] to-[#eab308] blur-[6px] opacity-70"
+          />
+          <div className={`absolute inset-[5px] overflow-hidden rounded-full border-2 ${dark ? "border-slate-950" : "border-white"}`}>
+            <img src="/kiki-avatar.png" alt="Kiki" className="h-full w-full object-cover" />
+          </div>
+          <motion.div
+            animate={{ y: [0, -6, 0], rotate: [0, 8, -8, 0] }}
+            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+            className="absolute -right-1 -top-1 flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#0ea5e9] text-white shadow-lg shadow-indigo-500/30"
+          >
+            <Sparkles className="h-4 w-4" />
+          </motion.div>
+        </motion.div>
 
-      <motion.button
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.6 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={onStart}
-        className="rounded-full bg-gradient-to-r from-[#482880] to-[#6d5dfc] px-8 py-4 text-lg font-bold text-white shadow-xl shadow-purple-500/30 transition-shadow hover:shadow-2xl mt-8"
-        style={{ fontFamily: "Quicksand, sans-serif" }}
-      >
-        <span className="flex items-center gap-2">
+        {/* Headline */}
+        <motion.h1
+          variants={item}
+          className={`text-4xl font-bold leading-tight sm:text-5xl ${headingColor}`}
+          style={{ fontFamily: "Quicksand, sans-serif" }}
+        >
+          {t("splash.meet")}{" "}
+          <span
+            style={{
+              background: "linear-gradient(135deg, #482880 0%, #6d5dfc 55%, #eab308 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            Kiki
+          </span>
+        </motion.h1>
+
+        <motion.p
+          variants={item}
+          className={`mx-auto mt-3 max-w-md text-sm leading-relaxed sm:text-base ${subColor}`}
+        >
+          {t("splash.headline")}
+        </motion.p>
+
+        {/* Feature pills */}
+        <motion.div variants={item} className="mt-6 flex flex-wrap justify-center gap-2">
+          {features.map(f => (
+            <span
+              key={f.label}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold ${pillClass}`}
+            >
+              <f.icon className="h-3.5 w-3.5" />
+              {f.label}
+            </span>
+          ))}
+        </motion.div>
+
+        {/* CTA */}
+        <motion.button
+          variants={item}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={onStart}
+          className="group mt-8 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#482880] to-[#6d5dfc] px-9 py-4 text-lg font-bold text-white shadow-xl shadow-purple-500/30 transition-shadow hover:shadow-2xl"
+          style={{ fontFamily: "Quicksand, sans-serif" }}
+        >
           <Sparkles className="h-5 w-5" />
           {t("splash.cta")}
-        </span>
-      </motion.button>
+          <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+        </motion.button>
+
+        {/* Language toggle */}
+        <motion.div variants={item} className="mt-5 flex items-center justify-center gap-1.5">
+          {(["en", "si"] as const).map(lng => (
+            <button
+              key={lng}
+              onClick={() => setLanguage(lng)}
+              className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
+                language === lng
+                  ? "bg-gradient-to-r from-[#482880] to-[#6d5dfc] text-white shadow-md"
+                  : dark
+                    ? "text-slate-400 hover:text-white"
+                    : "text-[#7a72a6] hover:text-[#482880]"
+              }`}
+            >
+              {lng === "en" ? "English" : "සිංහල"}
+            </button>
+          ))}
+        </motion.div>
+
+        <motion.p variants={item} className={`mt-6 text-[11px] ${dark ? "text-slate-500" : "text-[#8d86b0]"}`}>
+          {t("splash.powered")}
+        </motion.p>
+      </motion.div>
     </motion.div>
   );
 }

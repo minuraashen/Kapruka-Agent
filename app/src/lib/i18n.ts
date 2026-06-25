@@ -10,6 +10,15 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Splash
     "splash.tagline": "Your Smart Shopping Companion for Kapruka",
     "splash.cta": "Let's Shop!",
+    "splash.badge": "AI Shopping Assistant",
+    "splash.meet": "Meet",
+    "splash.headline": "Gifts, cakes & flowers — discovered, quoted and delivered, all in one chat.",
+    "splash.feat.gifts": "Gifts",
+    "splash.feat.cakes": "Cakes",
+    "splash.feat.flowers": "Flowers",
+    "splash.feat.delivery": "Island-wide delivery",
+    "splash.feat.sinhala": "Speaks සිංහල",
+    "splash.powered": "Powered by the live Kapruka catalog · Prices in LKR",
 
     // Greeting (templated with {name})
     "greeting": "Ayubowan, {name}! 🙏 I'm **Kiki**, your shopping buddy for Kapruka. I can find gifts, cakes, flowers and more — quote delivery anywhere in Sri Lanka, and take you all the way to checkout. What are we shopping for today?",
@@ -221,6 +230,15 @@ export const translations: Record<Lang, Record<string, string>> = {
   si: {
     "splash.tagline": "Kapruka එක්ක ඔබේ බුද්ධිමත් සාප්පු සහායකයා",
     "splash.cta": "සාප්පු යමු!",
+    "splash.badge": "AI සාප්පු සහායකයා",
+    "splash.meet": "හඳුන්වා දෙන්නම්",
+    "splash.headline": "තෑගි, කේක්, මල් — හොයලා, මිල කියලා, බෙදාහැරලා — එකම කතාබහකින්.",
+    "splash.feat.gifts": "තෑගි",
+    "splash.feat.cakes": "කේක්",
+    "splash.feat.flowers": "මල්",
+    "splash.feat.delivery": "දිවයින පුරා බෙදාහැරීම",
+    "splash.feat.sinhala": "සිංහලෙන් කතා කරයි",
+    "splash.powered": "සජීවී Kapruka නාමාවලියෙන් · මිල LKR වලින්",
 
     "greeting": "ආයුබෝවන්, {name}! 🙏 මම **Kiki**, ඔබේ Kapruka සාප්පු මිතුරා. තෑගි, කේක්, මල් වගේ දේ හොයලා දෙන්න, ශ්‍රී ලංකාවේ ඕනෑම තැනකට බෙදාහැරීම් ගාස්තු කියන්න, ඇණවුම අවසන් කරනකම් එක්ක ඉන්න මට පුළුවන්. අද අපි මොනවද හොයන්නේ?",
     "greeting.fallbackName": "යාළුවා",
