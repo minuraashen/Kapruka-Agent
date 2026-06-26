@@ -9,30 +9,32 @@ A beautiful, full-screen conversational shopping experience powered by the Kapru
 
 > 🌐 **Live:** [https://minuraashen-kapruka-agent.hf.space](https://minuraashen-kapruka-agent.hf.space)
 
+---
+
 ## Web UI of Working Agent
 
 <table>
   <tr>
     <td align="center" width="50%">
+      <br/><sup><b>Splash screen — English</b></sup>
       <img src="app/public/assets/home-eng.png" alt="Kiki splash screen in English" width="100%"/>
-      <br/><sub><b>Splash screen — English</b></sub>
     </td>
     <td align="center" width="50%">
-      <img src="app/public/assets/home-sin.png" alt="Kiki splash screen in Sinhala" width="100%"/>
       <br/><sub><b>Splash screen — සිංහල</b></sub>
+      <img src="app/public/assets/home-sin.png" alt="Kiki splash screen in Sinhala" width="95%"/>
     </td>
   </tr>
   <tr>
-    <td align="center" width="50%">
-      <img src="app/public/assets/chat-ui.png" alt="Chat UI with onboarding cards, Gift Genie, and festival chips" width="100%"/>
       <br/><sub><b>Chat UI — onboarding, Gift Genie &amp; festival chips</b></sub>
-    </td>
-    <td align="center" width="50%">
-      <img src="app/public/assets/chat-response.png" alt="AI response with product carousel showing birthday cakes and gifts" width="100%"/>
+      <img src="app/public/assets/chat-ui.png" alt="Chat UI with onboarding cards, Gift Genie, and festival chips" width="100%"/>
+  </tr>
+  <tr>
       <br/><sub><b>AI response with live product carousel</b></sub>
-    </td>
+      <img src="app/public/assets/chat-response.png" alt="AI response with product carousel showing birthday cakes and gifts" width="100%"/>
   </tr>
 </table>
+
+---
 
 ## What You're Building
 
