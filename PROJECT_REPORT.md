@@ -19,13 +19,13 @@ The product catalog, delivery network, and order creation are all provided by **
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                          BROWSER (SPA)                            │
-│  React 19 + Vite + Tailwind + framer-motion + Zustand            │
+│  React 19 + Vite 7 + Tailwind CSS v3 + framer-motion + Zustand   │
 │                                                                  │
 │  Home.tsx ── orchestrates chat UI                                │
-│   ├─ ChatBubble (typewriter streaming, markdown, action chips)   │
-│   ├─ ProductCarousel / ProductCard                               │
+│   ├─ ChatBubble (typewriter reveal, markdown, action chips)      │
+│   ├─ ProductCarousel / ProductCard / ProductQuickView            │
 │   ├─ DeliveryCard / OrderTrackingCard / OrderConfirmationCard    │
-│   ├─ OnboardingCards / FestivalChips / GiftGenie                 │
+│   ├─ OnboardingCards / FestivalChips / GiftGenie / SuggestionChips│
 │   ├─ CartDrawer / CheckoutForm                                   │
 │   └─ ThinkingIndicator                                           │
 │                                                                  │
@@ -49,7 +49,7 @@ The product catalog, delivery network, and order creation are all provided by **
 │      30s cache, rate-limit retry, image enrichment               │
 │  kapruka-parse.ts ── Markdown → structured data (cards)          │
 │                                                                  │
-│  NO DATABASE. Fully stateless.                                    │
+│  NO DATABASE. Fully stateless. History sent by client each turn.  │
 └─────────┬───────────────────────────────────┬────────────────────┘
           │ OpenAI-compatible HTTP            │ MCP (StreamableHTTP)
           ▼                                   ▼
@@ -67,15 +67,15 @@ The product catalog, delivery network, and order creation are all provided by **
 |---|---|---|
 | UI framework | **React 19** | Component model, ecosystem |
 | Build/dev | **Vite 7** | Fast HMR; `@hono/vite-dev-server` runs the API in the same dev process |
-| Styling | **Tailwind CSS 3** + shadcn/ui (Radix) | Rapid, consistent styling; accessible primitives |
+| Styling | **Tailwind CSS v3** + shadcn/ui (Radix) | Rapid, consistent styling; accessible primitives |
 | Animation | **framer-motion** | Declarative spring animations for the "alive" feel |
-| State | **Zustand** (+ `persist`) | Tiny, no boilerplate, localStorage persistence in one line |
+| State | **Zustand v5** (+ `persist`) | Tiny, no boilerplate, localStorage persistence in one line |
 | API | **tRPC 11** + **superjson** | End-to-end TypeScript types from server to client, no codegen |
 | Server | **Hono** | Lightweight, edge-style; runs via `@hono/node-server` in prod |
-| LLM | **OpenRouter** via the **OpenAI SDK** | OpenAI-compatible function-calling; free models available |
-| Tools/data | **Model Context Protocol SDK** | Kapruka exposes its catalog/orders as an MCP server |
-| Background FX | **Custom WebGL shader** | Animated brand gradient (simplex noise) |
-| Routing | **react-router 7** | `/` (chat) and `/login` (optional) |
+| LLM | **OpenRouter** via the **OpenAI SDK v6** | OpenAI-compatible function-calling; free model fallback chain |
+| Tools/data | **`@modelcontextprotocol/sdk`** | Official MCP client SDK — Kapruka exposes catalog/orders as MCP |
+| Background FX | **Custom WebGL shader** | Animated brand gradient (simplex noise), three themes |
+| Routing | **react-router v7** | `/` (chat) and `/login` (optional personalization, not auth gate) |
 
 **Key point for interviews:** the app is *thin*. The "business logic" (catalog, pricing, delivery rules, order creation) lives in Kapruka's MCP. Our job is **orchestration + UX**: turn a chat message into the right sequence of tool calls and render the results beautifully.
 
@@ -147,7 +147,7 @@ This was a refactor: the original had Drizzle ORM + MySQL (`DATABASE_URL` was *r
 
 File: [`app/api/lib/mcp-client.ts`](app/api/lib/mcp-client.ts)
 
-Kapruka exposes its platform as an **MCP server**. We connect with the official SDK over **StreamableHTTP** transport.
+Kapruka exposes its platform as an **MCP server**. We connect with the official `@modelcontextprotocol/sdk` package over **StreamableHTTP** transport.
 
 Critical implementation details (each was learned the hard way):
 
@@ -277,13 +277,17 @@ There are **two** paths, now unified on the same cart:
 ## 14. File-by-file map
 
 **Backend (`app/api`)**
-- `boot.ts` — Hono app; mounts tRPC at `/api/trpc`; serves static files + listens in prod.
+- `boot.ts` — Hono app; mounts tRPC at `/api/trpc`; serves static files; health endpoint.
 - `router.ts` — root tRPC router (`ping`, `kapruka`, `chat`).
+- `context.ts` — tRPC context definition.
+- `middleware.ts` — tRPC middleware (public procedure factory).
 - `routers/chat.ts` — the agent loop + tool definitions + system prompt.
 - `routers/kapruka.ts` — thin tRPC wrappers over MCP tools (used by the manual checkout form); `createOrder`/`checkDelivery`/`trackOrder` return *parsed* structured data.
-- `lib/mcp-client.ts` — MCP connection, `{params}` wrap, cache, retry, image enrichment.
+- `lib/mcp-client.ts` — MCP connection (`@modelcontextprotocol/sdk`), `{params}` wrap, 30s cache, retry, image enrichment.
 - `lib/kapruka-parse.ts` — all Markdown → structured parsers.
-- `lib/env.ts` — env (LLM keys; `DATABASE_URL` optional/unused).
+- `lib/env.ts` — env loading (LLM keys; no database vars).
+- `lib/http.ts` — HTTP utility helpers.
+- `lib/vite.ts` — Vite dev-server integration helper.
 
 **Frontend (`app/src`)**
 - `App.tsx` — routes (`/` chat, `/login` optional; **no auth gate**).
@@ -291,9 +295,11 @@ There are **two** paths, now unified on the same cart:
 - `pages/Login.tsx` — optional "personalize your name" screen.
 - `store/chatStore.ts` — Zustand store (+ persist).
 - `lib/i18n.ts` — EN/Sinhala dictionaries + `useT()`.
+- `lib/utils.ts` — utility helpers.
+- `hooks/use-mobile.ts` — mobile viewport detection.
 - `providers/trpc.tsx` — tRPC React client (httpBatchLink + superjson).
-- `components/chat/*` — ChatBubble, ChatHeader, ChatInputBar (with voice input), ProductCard, ProductCarousel, CartDrawer, CheckoutForm, OnboardingCards, FestivalChips, GiftGenie, DeliveryCard, OrderTrackingCard, OrderConfirmationCard, ThinkingIndicator.
-- `components/effects/GradientBackground.tsx` — WebGL simplex-noise brand gradient.
+- `components/chat/*` — ChatBubble, ChatHeader, ChatInputBar (with voice input), ProductCard, ProductCarousel, ProductQuickView, CartDrawer, CheckoutForm, OnboardingCards, FestivalChips, GiftGenie, SuggestionChips, DeliveryCard, OrderTrackingCard, OrderConfirmationCard, ThinkingIndicator.
+- `components/effects/GradientBackground.tsx` — WebGL simplex-noise brand gradient (three themes).
 - `components/ui/*` — shadcn/ui (Radix) primitives.
 
 ---
@@ -310,14 +316,12 @@ There are **two** paths, now unified on the same cart:
 
 ## 16. Known limitations / "what would you do differently" (interview honesty)
 
-1. **Free LLM** (`gpt-oss-120b:free`) rate-limits (429) and adds latency (~25–30s/turn). For a judged demo a small paid model (e.g. `gpt-4o-mini`) is far more reliable. This is a known, deliberate constraint.
-2. **Not yet deployed** — runs on localhost; needs a stable public URL.
-3. **Regex Markdown parsers** are brittle to MCP format changes (mitigated by `raw` fallbacks).
-4. **Manual checkout city** must match exact MCP city names — needs an autocomplete using `list_delivery_cities`.
-5. **Agent sometimes double-searches** (one call with a guessed `category` returns 0, then a correct call) — wasteful; fix with a prompt guardrail to confirm categories via `list_categories`.
-6. **No real auth/payment** — "login" is a cosmetic personalization; payment is the MCP's guest pay URL.
-7. **~590 kB JS bundle**, no code-splitting — could lazy-load the WebGL/checkout.
-8. **Predictive thinking chips** aren't tied to real-time tool execution (a true-streaming backend would fix this).
+1. **Free LLM** (`gpt-oss-120b:free`) rate-limits (429) and adds latency (~25–30s/turn). Mitigated by the comma-separated model fallback chain in `LLM_MODEL`. For a judged demo a small paid model (e.g. `openai/gpt-4o-mini`) on OpenRouter is far more reliable.
+2. **Regex Markdown parsers** are brittle to MCP format changes (mitigated by `raw` fallbacks on every parser).
+3. **Manual checkout city** must match exact MCP city names — needs a city autocomplete using `list_delivery_cities`.
+4. **Agent sometimes double-searches** (guessed `category` returns 0 results, then a correct open-text call) — wasteful; fix with a prompt guardrail to confirm categories via `list_categories` first.
+5. **No real auth/payment** — "login" is a cosmetic personalization screen; payment is the MCP's guest pay URL.
+6. **Predictive thinking chips** aren't tied to real-time tool execution (a true token-streaming backend would fix this, but reliability on a rate-limited free model was the priority).
 
 ---
 
@@ -354,7 +358,11 @@ The live cart (Zustand) is sent with every request and injected into the system 
 ```bash
 cd app
 npm install
-# .env needs: LLM_API_KEY (OpenRouter), LLM_MODEL, LLM_BASE_URL
+# .env needs: LLM_API_KEY (OpenRouter key), LLM_BASE_URL, LLM_MODEL
+# See .env.example for the recommended free-model fallback chain
 npm run dev        # Vite + Hono on http://localhost:3000
 ```
-No database required. `npm run build` produces the client bundle + an esbuild server bundle (`dist/boot.js`); `npm start` runs it in production mode.
+
+No database required. `npm run build` produces the React client bundle + an esbuild server bundle (`dist/boot.js`); `npm start` runs it in production mode.
+
+See [`DEPLOY.md`](../DEPLOY.md) for Render.com (free tier) and Docker deployment instructions.
