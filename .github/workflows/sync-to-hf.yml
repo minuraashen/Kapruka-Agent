@@ -1,0 +1,41 @@
+name: 🤗 Sync to Hugging Face Space
+
+# Trigger on every push to main that touches anything inside app/
+# (doc-only changes to the repo root don't rebuild the Space)
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/**"
+
+  # Allow manual trigger from the GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  sync-to-hf-space:
+    name: Push app/ → HF Space
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # Full history required by hub-sync
+          lfs: true           # Sync any LFS assets (images, etc.)
+
+      - name: Sync app/ subdirectory to Hugging Face Space
+        uses: huggingface/hub-sync@v0.1.0
+        with:
+          # Source (this GitHub repo)
+          github_repo_id: ${{ github.repository }}
+          # Destination (your HF Space)
+          huggingface_repo_id: minuraashen/kapruka-agent
+          # Only push the app/ folder — it becomes the root of the HF Space
+          subdirectory: app
+          # Must match the Space type (uses the Dockerfile at app/Dockerfile)
+          space_sdk: docker
+          # HF write token — add this in:
+          # GitHub repo → Settings → Secrets and variables → Actions → New secret
+          # Name: HF_TOKEN  |  Value: your token from https://huggingface.co/settings/tokens
+          hf_token: ${{ secrets.HF_TOKEN }}
