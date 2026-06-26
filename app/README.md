@@ -6,8 +6,8 @@ colorTo: indigo
 sdk: docker
 app_port: 3000
 pinned: false
-license: apache-2.0
-short_description: This is a Chat Agent for Kapruka Online Shopping Store
+license: mit
+short_description: AI Chat Agent for Kapruka Online Shopping Store
 ---
 
 # Kapruka Kiki — AI Shopping Assistant
@@ -21,6 +21,31 @@ A beautiful, full-screen conversational AI shopping assistant for **Kapruka** �
 
 > 🌐 **Live:** [https://minuraashen-kapruka-agent.hf.space](https://minuraashen-kapruka-agent.hf.space)
 > 📦 **Source:** [github.com/minuraashen/Kapruka-Agent](https://github.com/minuraashen/Kapruka-Agent)
+
+## Web UI of Working Agent
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="public/assets/home-eng.png" alt="Kiki splash screen in English" width="100%"/>
+      <br/><sub><b>Splash screen — English</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="public/assets/home-sin.png" alt="Kiki splash screen in Sinhala" width="100%"/>
+      <br/><sub><b>Splash screen — සිංහල</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="public/assets/chat-ui.png" alt="Chat UI with onboarding cards, Gift Genie, and festival chips" width="100%"/>
+      <br/><sub><b>Chat UI — onboarding, Gift Genie &amp; festival chips</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="public/assets/chat-response.png" alt="AI response with product carousel showing birthday cakes and gifts" width="100%"/>
+      <br/><sub><b>AI response with live product carousel</b></sub>
+    </td>
+  </tr>
+</table>
 
 ## What Kiki Does
 
