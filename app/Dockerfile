@@ -11,6 +11,7 @@ RUN npm run build && echo "✅ Build succeeded" && ls -la dist/
 
 FROM node:20-slim
 WORKDIR /app
+# NODE_ENV is set here so env.ts picks it up without npm start needing to set it.
 ENV NODE_ENV=production
 # Bring the built client assets, server bundle, and production node_modules.
 COPY --from=build /app/dist ./dist
@@ -18,4 +19,6 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json
 # Hosts inject PORT; the server reads it (defaults to 3000).
 EXPOSE 3000
-CMD ["npm", "start"]
+# Run the pre-bundled ESM server directly — skips npm overhead + inline eval.
+# NODE_ENV=production is already set above so isProduction = true in env.ts.
+CMD ["node", "dist/boot.js"]
