@@ -1,197 +1,101 @@
+---
+title: Kapruka Agent
+emoji: 👀
+colorFrom: yellow
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+license: apache-2.0
+short_description: This is a Chat Agent for Kapruka Online Shopping Store
+---
+
 # Kapruka Kiki — AI Shopping Assistant
 
-A beautiful, full-screen conversational shopping experience powered by the Kapruka MCP — Sri Lanka's largest e-commerce platform. Built for the **Kapruka Agent Challenge 2026**.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-HF%20Space-FF6C37?style=for-the-badge&logo=huggingface&logoColor=white)](https://minuraashen-kapruka-agent.hf.space)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://github.com/minuraashen/Kapruka-Agent/blob/main/LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-20-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
 
-## What You're Building
+A beautiful, full-screen conversational AI shopping assistant for **Kapruka** — Sri Lanka's largest e-commerce platform. Built for the **Kapruka Agent Challenge 2026**.
 
-Kiki is an AI shopping assistant that helps customers:
-- **Discover products** through natural conversation
-- **Send gifts** with guided gift-finding flow
-- **Track orders** in real-time
-- **Complete checkout** end-to-end with guest checkout and pay links
+> 🌐 **Live:** [https://minuraashen-kapruka-agent.hf.space](https://minuraashen-kapruka-agent.hf.space)
+> 📦 **Source:** [github.com/minuraashen/Kapruka-Agent](https://github.com/minuraashen/Kapruka-Agent)
+
+## What Kiki Does
+
+Chat in natural language (English, Sinhala, or Tanglish) to:
+- **Discover products** — AI searches the Kapruka catalog and shows visual cards
+- **Send gifts** — Gift Genie guides you (who / occasion / budget) to the perfect gift
+- **Check delivery** — real-time quotes for any Sri Lankan city
+- **Complete checkout** — full guest checkout with a Kapruka pay link
+- **Track orders** — live order status
 
 ## Architecture
 
 ### Frontend
-- **React 19 + TypeScript + Vite**
-- **Tailwind CSS + shadcn/ui** for styling
-- **Framer Motion** for animations (spring physics, staggered entrances)
-- **Zustand** for state management (chat state machine, cart, messages)
-- **Raw WebGL** for the animated gradient background (simplex noise shader)
-- **Full-screen chat UI** with immersive conversation flow
+- **React 19 + TypeScript + Vite 7**
+- **Tailwind CSS v3 + shadcn/ui** for styling
+- **Framer Motion** for animations
+- **Zustand** for state management (persisted to localStorage)
+- **Raw WebGL** animated gradient background (simplex noise shader)
+- Three themes: Light / Midnight / Sunset
 
 ### Backend
-- **Hono + tRPC** for type-safe API routes
-- **Drizzle ORM + MySQL** for data persistence
-- **MCP Client SDK** (`@modelcontextprotocol/sdk`) for connecting to Kapruka
-- **OpenAI-compatible LLM API** with function calling for AI orchestration
+- **Hono + tRPC 11** — fully stateless (no database)
+- **`@modelcontextprotocol/sdk`** — connects to Kapruka MCP
+- **OpenRouter** (OpenAI-compatible) — LLM with function calling + fallback chain
 
-### Kapruka MCP Integration
-All 7 Kapruka MCP tools are exposed through tRPC and mapped to OpenAI function definitions:
-
+### Kapruka MCP Tools
 | Tool | Purpose |
 |------|---------|
-| `kapruka_search_products` | Search the catalog by keyword |
-| `kapruka_get_product` | Get product details by ID |
-| `kapruka_list_categories` | Browse product categories |
-| `kapruka_list_delivery_cities` | Find delivery cities |
-| `kapruka_check_delivery` | Check delivery availability & pricing |
-| `kapruka_create_order` | Guest checkout with pay link |
-| `kapruka_track_order` | Track existing orders |
+| `kapruka_search_products` | Search catalog by keyword |
+| `kapruka_get_product` | Get product details + image |
+| `kapruka_list_categories` | Browse categories |
+| `kapruka_list_delivery_cities` | List delivery cities |
+| `kapruka_check_delivery` | Delivery availability & fee |
+| `kapruka_create_order` | Guest checkout → pay link |
+| `kapruka_track_order` | Track order status |
 
-## File Structure
+## Running Locally
 
-```
-├── api/
-│   ├── lib/
-│   │   └── mcp-client.ts          # MCP client connection to Kapruka
-│   ├── routers/
-│   │   ├── kapruka.ts             # tRPC router for all 7 MCP tools
-│   │   ├── chat.ts                # AI chat with OpenAI function calling
-│   │   └── cart.ts                # Cart management
-│   ├── router.ts                  # Main tRPC router registration
-│   ├── boot.ts                    # Hono server entry
-│   └── middleware.ts              # tRPC middleware
-├── db/
-│   └── schema.ts                  # Database tables (sessions, messages, carts, orders)
-├── src/
-│   ├── components/
-│   │   ├── chat/
-│   │   │   ├── ChatHeader.tsx     # Sticky top bar with branding
-│   │   │   ├── ChatBubble.tsx     # Animated message bubbles
-│   │   │   ├── OnboardingCards.tsx # 3 intent cards (Gift, Shop, Track)
-│   │   │   ├── ProductCard.tsx    # Product card with add-to-cart
-│   │   │   ├── ProductCarousel.tsx # Horizontal scrollable carousel
-│   │   │   ├── ChatInputBar.tsx   # Text input + send button
-│   │   │   ├── CartDrawer.tsx     # Slide-out cart panel
-│   │   │   └── CheckoutForm.tsx   # Multi-step checkout form
-│   │   └── effects/
-│   │       └── GradientBackground.tsx # WebGL animated gradient
-│   ├── pages/
-│   │   └── Home.tsx               # Main chat page with state machine
-│   ├── store/
-│   │   └── chatStore.ts           # Zustand store (state machine, cart, messages)
-│   └── providers/
-│       └── trpc.tsx               # tRPC client setup
-├── public/
-│   └── kiki-avatar.png            # Kiki mascot image
-└── design.md                      # Full design PRD
+```bash
+cd app
+npm install
+cp .env.example .env   # fill in LLM_API_KEY from openrouter.ai
+npm run dev            # http://localhost:3000
 ```
 
-## Chat State Machine
-
-```
-[SPLASH] → Let's Shop button → [ONBOARDING]
-  ├── Send a Gift → [GIFT_MODE] → product search → [PRODUCT_DISCOVERY] → cart → [CHECKOUT]
-  ├── Shop for Myself → [SHOP_MODE] → product search → [PRODUCT_DISCOVERY] → cart → [CHECKOUT]
-  └── Track an Order → [TRACK_MODE] → order status
-```
-
-## AI Orchestration Flow
-
-1. User sends a message via `trpc.chat.sendMessage`
-2. Backend stores the message and builds the conversation context
-3. The configured OpenAI-compatible LLM receives the message with all 7 Kapruka tools as function definitions
-4. AI decides which tool(s) to call (or responds directly)
-5. Backend executes tools via the MCP client, wrapping each tool's arguments in
-   the `{ params: ... }` envelope the Kapruka MCP expects, with retry/backoff on
-   rate-limits
-6. The MCP returns **Markdown** (not JSON). For product tools the backend parses
-   that Markdown into structured products and enriches the top results with
-   images (via `kapruka_get_product`) so the UI can render real cards
-7. AI generates a natural language response; it is stored and returned to the frontend
-8. Frontend renders text + rich UI components (inline product carousels, checkout form)
-
-## Setup
-
-### Required Environment Variables
-
-Add these to your `.env` file:
-
+### Environment Variables
 ```env
-# Already provided by the platform:
-DATABASE_URL=mysql://...
-APP_ID=...
-APP_SECRET=...
-
-# LLM via OpenRouter (https://openrouter.ai/) — use a tool-calling-capable model:
 LLM_API_KEY=sk-or-...
 LLM_BASE_URL=https://openrouter.ai/api/v1
-LLM_MODEL=openai/gpt-oss-120b:free
+LLM_MODEL=openai/gpt-oss-120b:free,openai/gpt-oss-20b:free,openrouter/free
 ```
 
-The agent uses OpenAI-compatible function calling against OpenRouter. Free models
-that worked at build time: `openai/gpt-oss-120b:free`, `openai/gpt-oss-20b:free`,
-`google/gemma-4-31b-it:free`, or `openrouter/free` (auto-routing).
+No database required — the app is fully stateless.
 
-> ⚠️ **Free models rate-limit aggressively (HTTP 429).** The backend retries with
-> backoff, but for a reliable judged demo, point `LLM_MODEL` at a small paid model
-> (e.g. `openai/gpt-4o-mini`) on the same OpenRouter key.
-
-### Database
+## Docker
 
 ```bash
-npm run db:push    # Sync schema to database
+docker build -t kiki .
+docker run -e LLM_API_KEY=sk-or-... -p 3000:3000 kiki
 ```
 
-### Development
+## Key Features
 
-```bash
-npm install
-npm run dev        # Start dev server at http://localhost:3000
-```
-
-### Step-by-Step Run
-
-1. Install dependencies with `npm install` inside the `app` folder.
-2. Create `.env` with `DATABASE_URL` and one LLM provider config.
-3. Run `npm run db:push` to create or update the schema.
-4. Start the app with `npm run dev`.
-5. Open `http://localhost:3000` and send a chat message to verify the Kapruka MCP flow.
-6. For production, run `npm run build` and then `npm start`.
-
-### Production Build
-
-```bash
-npm run build      # Build frontend + backend
-npm start          # Start production server
-```
-
-## Key Design Features
-
-1. **Animated Gradient Background** — WebGL shader with simplex noise creating organic, breathing brand colors
-2. **Isometric Message Entrances** — Spring-physics animations for chat bubbles
-3. **Product Carousel** — Horizontal scroll-snap with staggered entrance animations
-4. **Kiki Character** — Custom AI-generated mascot avatar (transparent PNG)
-5. **Cart System** — Full cart management with quantity controls and checkout flow
-6. **Multi-step Checkout** — Beautiful expanding form with stepper for recipient, delivery, and sender details
+- **Typewriter message reveal** — simulated streaming for a lively feel
+- **Product Carousel** — animated horizontal scroll with real images
+- **Gift Genie** — 3-tap guided gift flow
+- **Festival Chips** — Avurudu / Vesak / Christmas / Birthday shortcuts
+- **Voice input** — Web Speech API, language-aware (si-LK / en-US)
+- **EN / සිංහල i18n** — full chrome + agent replies in Sinhala
+- **LLM fallback chain** — auto-retries next model on HTTP 429
 
 ## Rate Limits
+- Kapruka MCP: 60 req/min per IP, 30 orders/hour
+- 30s read cache + exponential backoff built in
 
-Kapruka MCP free tier:
-- 60 requests/minute per IP
-- 30 orders/hour per IP
-- Guest checkout: 60-minute pay link with locked prices
+## License
 
-## Tech Stack Summary
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 19, TypeScript, Vite, Tailwind CSS, shadcn/ui, Framer Motion, Zustand |
-| Backend | Hono, tRPC 11, Drizzle ORM, MySQL |
-| AI | OpenAI GPT-4o-mini with function calling |
-| E-commerce | Kapruka MCP (7 tools) |
-| 3D/Effects | Raw WebGL (gradient shader) |
-
-## Scoring Alignment (Kapruka Rubric)
-
-| Category | How Kiki Delivers |
-|----------|------------------|
-| Experience & Polish (30) | Full-screen immersive chat, WebGL gradient, spring animations, glassmorphism |
-| Visual Richness (20) | Product cards with images, horizontal carousel, Kiki avatar, color-coded states |
-| Personality (15) | Warm, witty Sri Lankan context-aware AI persona |
-| Usefulness (15) | Guided gift finding, product discovery, delivery quoting, end-to-end checkout |
-| End-to-end Completeness (15) | Discovery → cart → delivery → guest checkout → pay link |
-| Creativity (5) | State machine-driven UI, WebGL background, isometric animations |
-
-**Bonus points**: Multi-item cart, delivery date picker, gift messaging support
+MIT © 2026 Minura Ashen — see [LICENSE](https://github.com/minuraashen/Kapruka-Agent/blob/main/LICENSE)
