@@ -1,6 +1,13 @@
 # Kapruka Kiki — AI Shopping Assistant
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-HF%20Space-FF6C37?style=for-the-badge&logo=huggingface&logoColor=white)](https://minuraashen-kapruka-agent.hf.space)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-20-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+
 A beautiful, full-screen conversational shopping experience powered by the Kapruka MCP — Sri Lanka's largest e-commerce platform. Built for the **Kapruka Agent Challenge 2026**.
+
+> 🌐 **Live:** [https://minuraashen-kapruka-agent.hf.space](https://minuraashen-kapruka-agent.hf.space)
 
 ## What You're Building
 
@@ -216,3 +223,17 @@ The backend implements a **30s read cache** and **exponential backoff** on 429 r
 | Creativity (5) | State machine-driven UI, WebGL background, Gift Genie, festival chips, Sinhala i18n |
 
 **Bonus points**: Multi-item cart, delivery date picker, gift messaging, Tanglish + Sinhala support
+
+---
+
+## License
+
+Distributed under the [MIT License](LICENSE). © 2026 Minura Ashen.
+
+## Acknowledgements
+
+- [Kapruka](https://www.kapruka.com) — Sri Lanka's largest e-commerce platform, for the public MCP server
+- [OpenRouter](https://openrouter.ai) — free LLM API gateway
+- [shadcn/ui](https://ui.shadcn.com) — accessible, composable UI primitives
+- [Hugging Face Spaces](https://huggingface.co/spaces) — free Docker hosting
+
