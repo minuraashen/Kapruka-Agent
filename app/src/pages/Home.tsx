@@ -29,6 +29,7 @@ import type {
 } from "@/store/chatStore";
 import { trpc } from "@/providers/trpc";
 import { useT } from "@/lib/i18n";
+import { useStickToBottom } from "@/lib/useStickToBottom";
 import GradientBackground from "@/components/effects/GradientBackground";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatBubble from "@/components/chat/ChatBubble";
@@ -444,31 +445,15 @@ export default function Home() {
   const [cartOpen, setCartOpen] = useState(false);
   const [genieOpen, setGenieOpen] = useState(false);
   const [streamingId, setStreamingId] = useState<number | null>(null);
-  const chatEndRef = useRef<HTMLDivElement>(null);
   const greetingAddedRef = useRef<string | null>(null);
 
   const sendMessageMutation = trpc.chat.sendMessage.useMutation();
 
-  const scrollToBottom = useCallback(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
-
-  // During the typewriter reveal we get a tick per few characters; smooth-
-  // scrolling on every tick causes a jittery "vibrating" feel, so throttle to
-  // an instant nudge at most ~10×/sec.
-  const lastScrollRef = useRef(0);
-  const throttledScroll = useCallback(() => {
-    const now = Date.now();
-    if (now - lastScrollRef.current > 100) {
-      lastScrollRef.current = now;
-      chatEndRef.current?.scrollIntoView({ behavior: "auto" });
-    }
-  }, []);
-
-  // Auto-scroll to bottom
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading, scrollToBottom]);
+  // Single, robust auto-scroll: a ResizeObserver pins the transcript to the
+  // bottom *instantly* as content grows (streaming text, cards, images), but
+  // only while the user is already at the bottom. No smooth-scroll animation to
+  // interrupt, so the chat no longer "vibrates" while a response renders.
+  const { scrollRef, contentRef, handleScroll } = useStickToBottom();
 
   const navItems: NavItem[] = [
     { icon: Compass, label: t("sidebar.explore"), prompt: p("explore") },
@@ -611,7 +596,7 @@ export default function Home() {
 
   // Stable handle to the latest handleSend so the retry toast can re-fire the
   // exact failed message without re-creating the callback (same ref pattern as
-  // ChatBubble's onStreamDone/onTick handles).
+  // ChatBubble's onStreamDone handle).
   const handleSendRef = useRef(handleSend);
   handleSendRef.current = handleSend;
 
@@ -795,7 +780,12 @@ export default function Home() {
                   onOpenMenu={() => setMobileMenuOpen(true)}
                 />
 
-                <div className="flex-1 space-y-4 overflow-y-auto px-3 py-5 sm:px-8 lg:px-10">
+                <div
+                  ref={scrollRef}
+                  onScroll={handleScroll}
+                  className="flex-1 overflow-y-auto px-3 py-5 sm:px-8 lg:px-10"
+                >
+                  <div ref={contentRef} className="space-y-4">
                   {messages.map((msg, index) => {
                     // Hold the rich cards back until the bubble finishes typing,
                     // so they slide in after the text instead of popping in mid-
@@ -807,11 +797,7 @@ export default function Home() {
                           message={msg}
                           index={index}
                           streaming={msg.id === streamingId}
-                          onStreamDone={() => {
-                            setStreamingId(null);
-                            scrollToBottom();
-                          }}
-                          onTick={throttledScroll}
+                          onStreamDone={() => setStreamingId(null)}
                         />
                         {cardsReady &&
                           msg.metadata?.products &&
@@ -864,8 +850,7 @@ export default function Home() {
                   {state === "checkout" && <CheckoutForm />}
 
                   {isLoading && <ThinkingIndicator lastUserMessage={lastUserMessage} />}
-
-                  <div ref={chatEndRef} />
+                  </div>
                 </div>
 
                 <ChatInputBar onSend={handleSend} />

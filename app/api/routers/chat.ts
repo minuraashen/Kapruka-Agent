@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "../middleware";
-import { callKaprukaTool, enrichProductsWithImages } from "../lib/mcp-client";
+import {
+  callKaprukaTool,
+  enrichProductsWithImages,
+  listKaprukaTools,
+} from "../lib/mcp-client";
 import {
   extractMarkdown,
   parseSearchResults,
@@ -10,25 +14,30 @@ import {
   parseTrackingResult,
 } from "../lib/kapruka-parse";
 import OpenAI from "openai";
-import { env } from "../lib/env";
+import { env, type LlmProvider } from "../lib/env";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function getLlmClient() {
-  if (!env.llmApiKey || !env.llmModel) {
-    throw new Error(
-      "Missing LLM configuration. Set LLM_API_KEY and LLM_MODEL for OpenRouter."
-    );
-  }
+// One OpenAI client per (baseUrl + key), reused across requests.
+const clientCache = new Map<string, OpenAI>();
 
-  return new OpenAI({
-    apiKey: env.llmApiKey,
-    baseURL: env.llmBaseUrl,
-    maxRetries: 1,
-    timeout: 30000,
-  });
+function getClientFor(provider: LlmProvider): OpenAI {
+  const cacheKey = `${provider.baseUrl}::${provider.apiKey}`;
+  let client = clientCache.get(cacheKey);
+  if (!client) {
+    client = new OpenAI({
+      apiKey: provider.apiKey,
+      baseURL: provider.baseUrl,
+      // We run our own retry/backoff + cross-provider fallback below, so disable
+      // the SDK's built-in retries to avoid compounding the wait on a 429.
+      maxRetries: 0,
+      timeout: 30000,
+    });
+    clientCache.set(cacheKey, client);
+  }
+  return client;
 }
 
 function getStatus(error: unknown): number | undefined {
@@ -37,212 +46,142 @@ function getStatus(error: unknown): number | undefined {
     : undefined;
 }
 
-// Call the LLM across the configured free-model fallback chain. A free model
+// Call the LLM across the configured cross-provider fallback chain. A provider
 // that 429s (or otherwise errors) is retried with backoff, then we fall through
-// to the next model in env.llmModels. This is the zero-cost substitute for a
-// paid model: if one free model is rate-limited, another usually answers.
+// to the next provider in env.llmProviders. Because the chain spans different
+// providers (e.g. Groq → OpenRouter), each has its own rate-limit bucket — the
+// zero-cost substitute for a paid model.
 async function createChatCompletion(
-  client: OpenAI,
   body: Omit<OpenAI.Chat.ChatCompletionCreateParamsNonStreaming, "model">
 ): Promise<OpenAI.Chat.ChatCompletion> {
-  const models = env.llmModels.length > 0 ? env.llmModels : [env.llmModel];
+  const providers = env.llmProviders;
+  if (providers.length === 0) {
+    throw new Error(
+      'No LLM providers configured. Set LLM_PROVIDERS (e.g. "groq|qwen/qwen3-32b") ' +
+        "with the matching <PROVIDER>_API_KEY, or the legacy LLM_API_KEY/LLM_MODEL."
+    );
+  }
+
   let lastError: unknown;
 
-  for (let m = 0; m < models.length; m++) {
-    const model = models[m];
+  for (let p = 0; p < providers.length; p++) {
+    const provider = providers[p];
+    const tag = `${provider.label}:${provider.model}`;
+
+    if (!provider.apiKey) {
+      console.warn(`[LLM] ${tag}: no API key configured; skipping`);
+      lastError = new Error(`Missing API key for provider "${provider.label}".`);
+      continue;
+    }
+
+    const client = getClientFor(provider);
+
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        return await client.chat.completions.create({ ...body, model });
+        return await client.chat.completions.create({
+          ...body,
+          model: provider.model,
+        });
       } catch (error) {
         lastError = error;
         const status = getStatus(error);
-        // Rate-limited: back off and retry the same model a couple of times…
+        // Rate-limited: back off and retry the same provider a couple of times…
         if (status === 429 && attempt < 2) {
           const delay = 1200 * (attempt + 1);
-          console.warn(`[LLM] 429 on ${model}; retry in ${delay}ms`);
+          console.warn(`[LLM] 429 on ${tag}; retry in ${delay}ms`);
           await sleep(delay);
           continue;
         }
-        // …otherwise stop retrying this model and fall through to the next one.
+        // …otherwise stop and fall through to the next provider in the chain.
         console.warn(
-          `[LLM] ${model} failed (${status ?? "no status"}); ` +
-            (m < models.length - 1 ? "falling back to next model" : "no more models")
+          `[LLM] ${tag} failed (${status ?? "no status"}); ` +
+            (p < providers.length - 1
+              ? "falling back to next provider"
+              : "no more providers")
         );
         break;
       }
     }
   }
 
-  throw lastError ?? new Error("All configured LLM models failed.");
+  throw lastError ?? new Error("All configured LLM providers failed.");
 }
 
 function getLlmErrorMessage(error: unknown) {
-  const status = error && typeof error === "object" ? (error as { status?: number }).status : undefined;
+  const status = getStatus(error);
 
   if (status === 429) {
-    return "OpenRouter is rate-limiting the selected free model right now. Please wait a bit and try again, or switch `LLM_MODEL` to another free OpenRouter model.";
+    return "All configured LLM providers are rate-limited right now. Please wait a moment and try again.";
   }
 
   if (status === 401) {
-    return "OpenRouter rejected the configured API key. Please check `LLM_API_KEY`, `LLM_BASE_URL`, and `LLM_MODEL` in `.env`.";
+    return "An LLM provider rejected its API key. Please check the provider API keys in `.env`.";
   }
 
-  return "OpenRouter is unavailable right now. Please check the server logs and LLM settings in `.env`.";
+  return "The AI service is unavailable right now. Please check the server logs and LLM settings in `.env`.";
 }
 
-// Tool definitions for OpenAI-compatible function calling.
-const TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
-  {
-    type: "function",
-    function: {
-      name: "kapruka_search_products",
-      description:
-        "Search the Kapruka catalog by keyword with optional category, price range, stock filter, and sorting. Returns a list of matching products with images, prices, and URLs.",
-      parameters: {
-        type: "object",
-        properties: {
-          q: { type: "string", description: "Search keyword (e.g., 'chocolate cake', 'flowers', 'gift box')" },
-          category: { type: "string", description: "Category name to filter by" },
-          min_price: { type: "number", description: "Minimum price in LKR" },
-          max_price: { type: "number", description: "Maximum price in LKR" },
-          in_stock_only: { type: "boolean", description: "Only show in-stock items" },
-          sort: { type: "string", enum: ["relevance", "price_asc", "price_desc", "newest"], description: "Sort order" },
-          limit: { type: "number", description: "Number of results (default 10, max 30)" },
-          currency: { type: "string", default: "LKR" },
-        },
-        required: ["q"],
+// MCP tool schemas are the single source of truth. We fetch them from the MCP
+// server at runtime and convert to OpenAI's function-calling format instead of
+// hand-duplicating them here (which silently drifts when the MCP server changes).
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type JsonSchema = Record<string, any>;
+
+// Inline every `#/$defs/...` reference so the schema we hand the model is fully
+// self-contained — free models handle plain inline JSON Schema more reliably
+// than $ref/$defs indirection.
+function dereference(
+  schema: JsonSchema,
+  defs: Record<string, JsonSchema>
+): JsonSchema {
+  if (Array.isArray(schema)) {
+    return schema.map((s) => dereference(s, defs)) as unknown as JsonSchema;
+  }
+  if (!schema || typeof schema !== "object") return schema;
+
+  if (typeof schema.$ref === "string") {
+    const name = schema.$ref.replace("#/$defs/", "");
+    return dereference(defs[name] ?? {}, defs);
+  }
+
+  const out: JsonSchema = {};
+  for (const [key, value] of Object.entries(schema)) {
+    if (key === "$defs") continue;
+    out[key] = dereference(value as JsonSchema, defs);
+  }
+  return out;
+}
+
+let toolsCache: OpenAI.Chat.ChatCompletionTool[] | null = null;
+
+// Build the OpenAI tool list from the live MCP definitions. The MCP wraps every
+// tool's arguments under a single `params` object, so we unwrap that level here —
+// the model then produces flat arguments and callKaprukaTool re-wraps them.
+async function getTools(): Promise<OpenAI.Chat.ChatCompletionTool[]> {
+  if (toolsCache) return toolsCache;
+
+  const { tools } = await listKaprukaTools();
+  toolsCache = tools.map((tool) => {
+    const schema = (tool.inputSchema ?? {}) as JsonSchema;
+    const defs = (schema.$defs ?? {}) as Record<string, JsonSchema>;
+    const paramsSchema = schema.properties?.params;
+    const parameters = paramsSchema
+      ? dereference(paramsSchema, defs)
+      : { type: "object", properties: {} };
+
+    return {
+      type: "function" as const,
+      function: {
+        name: tool.name,
+        description: tool.description,
+        parameters: parameters as Record<string, unknown>,
       },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "kapruka_get_product",
-      description: "Get full details for a specific product by ID including images, variants, shipping info.",
-      parameters: {
-        type: "object",
-        properties: {
-          product_id: { type: "string" },
-          currency: { type: "string", default: "LKR" },
-        },
-        required: ["product_id"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "kapruka_list_categories",
-      description: "List all top-level product categories available on Kapruka.",
-      parameters: {
-        type: "object",
-        properties: {
-          depth: { type: "number", description: "How many levels of subcategories to include" },
-        },
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "kapruka_list_delivery_cities",
-      description: "Search Kapruka's delivery network for cities. Returns matching city names.",
-      parameters: {
-        type: "object",
-        properties: {
-          query: { type: "string", description: "City name or partial name (e.g., 'Colombo', 'Kandy')" },
-          limit: { type: "number" },
-        },
-        required: ["query"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "kapruka_check_delivery",
-      description: "Check if delivery is available to a city on a specific date. Returns delivery fee and availability.",
-      parameters: {
-        type: "object",
-        properties: {
-          city: { type: "string" },
-          delivery_date: { type: "string", description: "Date in YYYY-MM-DD format" },
-          product_id: { type: "string", description: "Optional product ID for perishable items (cakes/flowers)" },
-        },
-        required: ["city", "delivery_date"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "kapruka_create_order",
-      description:
-        "Create a guest checkout order. Returns a click-to-pay URL valid for 60 minutes. Do NOT call this until ALL required fields are collected from the user.",
-      parameters: {
-        type: "object",
-        properties: {
-          cart: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                product_id: { type: "string" },
-                quantity: { type: "number" },
-              },
-              required: ["product_id", "quantity"],
-            },
-          },
-          recipient: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              address: { type: "string" },
-              city: { type: "string" },
-              phone: { type: "string" },
-              email: { type: "string" },
-            },
-            required: ["name", "address", "city", "phone"],
-          },
-          delivery: {
-            type: "object",
-            properties: {
-              date: { type: "string" },
-              instructions: { type: "string" },
-            },
-            required: ["date"],
-          },
-          sender: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              email: { type: "string" },
-              phone: { type: "string" },
-            },
-            required: ["name", "email"],
-          },
-          gift_message: { type: "string" },
-          currency: { type: "string", default: "LKR" },
-        },
-        required: ["cart", "recipient", "delivery", "sender"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "kapruka_track_order",
-      description: "Track an existing Kapruka order by order number.",
-      parameters: {
-        type: "object",
-        properties: {
-          order_number: { type: "string" },
-        },
-        required: ["order_number"],
-      },
-    },
-  },
-];
+    };
+  });
+
+  return toolsCache;
+}
 
 const BASE_SYSTEM_PROMPT = `You are Kiki, a warm, witty, and helpful AI shopping assistant for Kapruka — Sri Lanka's largest e-commerce platform. You help customers discover products, send gifts, and complete purchases. Today's date is ${new Date().toISOString().slice(0, 10)}.
 
@@ -325,7 +264,7 @@ export const chatRouter = createRouter({
       })
     )
     .mutation(async ({ input }) => {
-      const openrouter = getLlmClient();
+      const tools = await getTools();
 
       // Keep the prompt bounded — only the most recent turns matter.
       const history = input.messages.slice(-16);
@@ -349,12 +288,12 @@ export const chatRouter = createRouter({
       for (let i = 0; i < 5; i++) {
         let response: OpenAI.Chat.ChatCompletion | undefined;
 
-        // Free OpenRouter models rate-limit aggressively — retry with backoff
-        // and fall through the configured free-model chain on failure.
+        // Free models rate-limit aggressively — retry with backoff and fall
+        // through the configured cross-provider chain on failure.
         try {
-          response = await createChatCompletion(openrouter, {
+          response = await createChatCompletion({
             messages: messagesForAI,
-            tools: TOOLS,
+            tools,
             tool_choice: "auto",
             temperature: 0.8,
           });
@@ -362,15 +301,22 @@ export const chatRouter = createRouter({
           const errorMsg =
             error instanceof Error ? error.message : String(error);
           console.error("[LLM] Chat completion failed:", errorMsg);
-          assistantContent = getLlmErrorMessage(error);
+          // Only surface the error if we have nothing to show yet; otherwise keep
+          // the partial answer (and any product cards already fetched).
+          if (!assistantContent) assistantContent = getLlmErrorMessage(error);
         }
 
         if (!response) break;
 
         const message = response.choices[0].message;
 
+        // Keep the most recent non-empty assistant text. Some models emit the
+        // user-facing message *alongside* the tool call, others only *after* the
+        // tool results return. Taking the latest non-empty content (assign, not
+        // append) captures either pattern without duplicating text across the
+        // tool-calling iterations.
         if (message.content) {
-          assistantContent += message.content;
+          assistantContent = message.content;
         }
 
         if (message.tool_calls && message.tool_calls.length > 0) {
@@ -465,6 +411,8 @@ export const chatRouter = createRouter({
           continue;
         }
 
+        // No tool calls → this message is the final answer (its content, if any,
+        // was already captured above).
         break;
       }
 

@@ -11,7 +11,6 @@ interface Props {
   index: number;
   streaming?: boolean;
   onStreamDone?: () => void;
-  onTick?: () => void;
 }
 
 // Minimal, safe inline Markdown: **bold**, *italic*, `code`, and [text](url).
@@ -94,7 +93,7 @@ const ACTION_LABELS: Record<string, string> = {
   kapruka_list_delivery_cities: "action.cities",
 };
 
-export default function ChatBubble({ message, index, streaming, onStreamDone, onTick }: Props) {
+export default function ChatBubble({ message, index, streaming, onStreamDone }: Props) {
   const isUser = message.role === "user";
   const theme = useChatStore((s) => s.theme || "light");
   const { t } = useT();
@@ -104,9 +103,7 @@ export default function ChatBubble({ message, index, streaming, onStreamDone, on
   const [revealed, setRevealed] = useState(streaming ? "" : message.content);
   const [isTyping, setIsTyping] = useState(Boolean(streaming));
   const doneRef = useRef(onStreamDone);
-  const tickRef = useRef(onTick);
   doneRef.current = onStreamDone;
-  tickRef.current = onTick;
 
   useEffect(() => {
     if (!streaming) {
@@ -127,7 +124,6 @@ export default function ChatBubble({ message, index, streaming, onStreamDone, on
         doneRef.current?.();
       } else {
         setRevealed(full.slice(0, i));
-        tickRef.current?.();
       }
     }, 18);
     return () => clearInterval(id);
