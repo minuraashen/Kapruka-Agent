@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ShoppingCart, Sun, Moon, Sunrise, ChevronDown, Menu, Languages } from "lucide-react";
+import { Plus, ShoppingCart, Sun, Moon, Sunrise, ChevronDown, Menu, Languages, History } from "lucide-react";
 import { useChatStore } from "@/store/chatStore";
 import { useT } from "@/lib/i18n";
 import { themeStyles } from "@/pages/Home";
@@ -9,9 +9,10 @@ interface Props {
   onNewChat: () => void;
   onOpenCart: () => void;
   onOpenMenu: () => void;
+  onOpenHistory: () => void;
 }
 
-export default function ChatHeader({ onNewChat, onOpenCart, onOpenMenu }: Props) {
+export default function ChatHeader({ onNewChat, onOpenCart, onOpenMenu, onOpenHistory }: Props) {
   const cart = useChatStore(s => s.cart);
   const theme = useChatStore(s => s.theme || "light");
   const setTheme = useChatStore(s => s.setTheme);
@@ -83,6 +84,19 @@ export default function ChatHeader({ onNewChat, onOpenCart, onOpenMenu }: Props)
       </div>
 
       <div className="flex items-center gap-2">
+        {/* This chat history palette toggle */}
+        <button
+          onClick={onOpenHistory}
+          title={t("history.title")}
+          className={`flex h-10 w-10 items-center justify-center rounded-2xl border shadow-sm transition-colors ${
+            theme === "midnight"
+              ? "border-white/10 bg-slate-900/60 text-slate-200 hover:bg-slate-900/85"
+              : "border-white/60 bg-white/70 text-[#482880] hover:bg-white"
+          }`}
+        >
+          <History className="h-4 w-4" />
+        </button>
+
         {/* Language toggle EN ⇄ සිංහල */}
         <button
           onClick={() => setLanguage(language === "en" ? "si" : "en")}

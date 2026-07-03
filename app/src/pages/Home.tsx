@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
-  Clock3,
   Compass,
   Gift,
   MessageSquarePlus,
@@ -360,66 +359,109 @@ function LeftSidebar({
   );
 }
 
-function HistoryRail({
+function HistoryPalette({
+  isOpen,
+  onClose,
   prompts,
   onSelect,
   onClearHistory,
   styles,
+  theme,
 }: {
+  isOpen: boolean;
+  onClose: () => void;
   prompts: string[];
   onSelect: (prompt: string) => void;
   onClearHistory: () => void;
   styles: typeof themeStyles.light;
+  theme: string;
 }) {
   const { t } = useT();
   return (
-    <aside className={`hidden w-[250px] shrink-0 flex-col border-l px-4 py-5 backdrop-blur-2xl xl:flex ${styles.sidebarBg}`}>
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <h2
-            className={`text-base font-bold ${styles.sidebarTitle}`}
-            style={{ fontFamily: "Quicksand, sans-serif" }}
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-[60] bg-[#0f172a]/25 backdrop-blur-[2px]"
+          />
+
+          {/* Palette */}
+          <motion.div
+            initial={{ opacity: 0, y: -12, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 320, damping: 26 }}
+            className={`fixed right-3 top-[84px] z-[70] flex max-h-[min(70vh,520px)] w-[320px] max-w-[calc(100vw-1.5rem)] flex-col rounded-[26px] border p-4 shadow-2xl backdrop-blur-2xl transition-colors duration-500 sm:right-8 lg:right-14 ${styles.cartDrawerBg} ${
+              theme === "midnight" ? "border-white/10" : "border-white/60"
+            }`}
           >
-            {t("history.title")}
-          </h2>
-          <p className={`text-xs ${styles.sidebarSub}`}>{t("history.sub")}</p>
-        </div>
-        <Clock3 className="h-4 w-4 text-[#5d6ff2]" />
-      </div>
-
-      <div className="flex-1 space-y-2 overflow-y-auto">
-        {prompts.length === 0 ? (
-          <p className={`px-2 text-xs ${styles.sidebarSub}`}>
-            {t("history.empty")}
-          </p>
-        ) : (
-          prompts.map((item, index) => (
-            <button
-              key={`${item}-${index}`}
-              onClick={() => onSelect(item)}
-              className={`group flex w-full items-start gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors ${styles.sidebarText}`}
-            >
-              <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-white/70 text-[#5d6ff2]">
-                <Search className="h-3.5 w-3.5" />
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2
+                  className={`text-base font-bold ${styles.sidebarTitle}`}
+                  style={{ fontFamily: "Quicksand, sans-serif" }}
+                >
+                  {t("history.title")}
+                </h2>
+                <p className={`text-xs ${styles.sidebarSub}`}>{t("history.sub")}</p>
               </div>
-              <p className="min-w-0 truncate text-xs font-semibold">
-                {item}
-              </p>
-            </button>
-          ))
-        )}
-      </div>
+              <button
+                onClick={onClose}
+                className={`flex h-8 w-8 items-center justify-center rounded-2xl transition-colors ${
+                  theme === "midnight" ? "bg-white/10 text-white hover:bg-white/20" : "bg-[#482880]/10 text-[#482880] hover:bg-[#482880]/20"
+                }`}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
 
-      {prompts.length > 0 && (
-        <button
-          onClick={onClearHistory}
-          className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-white/70 px-4 py-3 text-xs font-semibold text-[#dc2626] shadow-sm transition-colors hover:bg-white"
-        >
-          <Trash2 className="h-4 w-4" />
-          {t("history.clear")}
-        </button>
+            <div className="flex-1 space-y-2 overflow-y-auto">
+              {prompts.length === 0 ? (
+                <p className={`px-2 py-6 text-center text-xs ${styles.sidebarSub}`}>
+                  {t("history.empty")}
+                </p>
+              ) : (
+                prompts.map((item, index) => (
+                  <button
+                    key={`${item}-${index}`}
+                    onClick={() => {
+                      onSelect(item);
+                      onClose();
+                    }}
+                    className={`group flex w-full items-start gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors ${styles.sidebarText}`}
+                  >
+                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-white/70 text-[#5d6ff2]">
+                      <Search className="h-3.5 w-3.5" />
+                    </div>
+                    <p className="min-w-0 truncate text-xs font-semibold">
+                      {item}
+                    </p>
+                  </button>
+                ))
+              )}
+            </div>
+
+            {prompts.length > 0 && (
+              <button
+                onClick={() => {
+                  onClearHistory();
+                  onClose();
+                }}
+                className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-white/70 px-4 py-3 text-xs font-semibold text-[#dc2626] shadow-sm transition-colors hover:bg-white"
+              >
+                <Trash2 className="h-4 w-4" />
+                {t("history.clear")}
+              </button>
+            )}
+          </motion.div>
+        </>
       )}
-    </aside>
+    </AnimatePresence>
   );
 }
 
@@ -442,6 +484,7 @@ export default function Home() {
   const { t, p } = useT();
 
   const [cartOpen, setCartOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [genieOpen, setGenieOpen] = useState(false);
   const [streamingId, setStreamingId] = useState<number | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -793,6 +836,7 @@ export default function Home() {
                   onNewChat={handleNewChat}
                   onOpenCart={() => setCartOpen(true)}
                   onOpenMenu={() => setMobileMenuOpen(true)}
+                  onOpenHistory={() => setHistoryOpen(true)}
                 />
 
                 <div className="flex-1 space-y-4 overflow-y-auto px-3 py-5 sm:px-8 lg:px-10">
@@ -870,14 +914,17 @@ export default function Home() {
 
                 <ChatInputBar onSend={handleSend} />
               </main>
-
-              <HistoryRail
-                prompts={historyPrompts}
-                onSelect={handleSend}
-                onClearHistory={handleNewChat}
-                styles={styles}
-              />
             </div>
+
+            <HistoryPalette
+              isOpen={historyOpen}
+              onClose={() => setHistoryOpen(false)}
+              prompts={historyPrompts}
+              onSelect={handleSend}
+              onClearHistory={handleNewChat}
+              styles={styles}
+              theme={theme}
+            />
 
             <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
           </motion.div>
